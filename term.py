@@ -1,136 +1,127 @@
 import os
 import curses
+import curses.ascii
 import threading
 import time
 
 from adom import Document, Element
 from browser import *
-from render import renderDocument
+from render import *
 from util import *
+from window import Window
 
-stdscr = curses.initscr()
+window = Window(curses.initscr())
 
-HEIGHT, WIDTH = stdscr.getmaxyx()
+browser = Browser("term://welcome")
 
-exiting = False
+user_input = None
+user_input_thread_handle = None
 
-URL = "term://welcome"
-browser = Browser(URL)
-
-USER_INPUT = None
-USER_INPUT_THREAD_HANDLE = None
-
-FRAME_RATE = 30 # 30 frames per second
+fps = 30 # 30 frames per second
 
 def setup(screen):
-	setup_window()
 	lifecycle()
 
-def setup_window():
-	curses.noecho()
-	stdscr.keypad(True)
-	stdscr.clear()
-
 def lifecycle():
-	global WIDTH
-	global HEIGHT
-	global USER_INPUT_THREAD_HANDLE
-	# update()
+	global window, user_input_thread_handle
 
-	USER_INPUT_THREAD_HANDLE = threading.Thread(name ='daemon', target=user_input_thread, args=())
-	USER_INPUT_THREAD_HANDLE.setDaemon(True)
-	USER_INPUT_THREAD_HANDLE.start()
+	user_input_thread_handle = threading.Thread(name ='daemon', target=user_input_thread, args=())
+	user_input_thread_handle.setDaemon(True)
+	user_input_thread_handle.start()
 
 	render()
-	stdscr.refresh()
 
 	while True:
-		resized = curses.is_term_resized(HEIGHT, WIDTH)
+		resized = window.get_resized()
 		if resized:
-			y, x = stdscr.getmaxyx()
-			stdscr.clear()
-			curses.resizeterm(y, x)
-			WIDTH = x
-			HEIGHT = y
-			stdscr.refresh()
+			window.resize()
 			continue
 		update()
 		render()
 		if browser.loading:
 			browser.start_load()
-		stdscr.refresh()
-		time.sleep(1.0 / FRAME_RATE)
+		window.refresh()
+		time.sleep(1.0 / fps)
 
 def user_input_thread():
-	global USER_INPUT, exiting, URL
+	global window, user_input
 	while True:
-		USER_INPUT = stdscr.getch()
-		curses.flushinp()
-		linkIndex = browser.document.find_link(USER_INPUT)
-		if USER_INPUT == ord("`"):
-			exiting = True
+		user_input = window.get_input()
+		linkIndex = browser.document.find_link(user_input)
+		if user_input == ord("`"):
+			window.exiting = True
 			exit(0)
-		elif USER_INPUT == 9: # tab:
+		elif user_input == 9: # tab:
 			browser.document.focus_next()
 		elif browser.document.focus != -1:
-			char = chr(USER_INPUT)
+			char = chr(user_input)
 			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?"
 
 			if browser.document.focus == -2: # URL
 				if inputChars.find(char) != -1:
 					browser.URL += str(char)
-				elif USER_INPUT == 127: # backspace
+				elif user_input == 127: # backspace
 					browser.URL = browser.URL[:-1] if len(browser.URL) > 0 else ""
-				elif USER_INPUT == 10: # enter
+				elif user_input == 10: # enter
 					browser.open_link(browser.URL)
 					browser.document.focus = -1
 			else: # input element
 				focusedElement = browser.document.get_focused_element()
 				if inputChars.find(char) != -1:
 					focusedElement.value += str(char)
-				elif USER_INPUT == 127: # backspace
+				elif user_input == 127: # backspace
 					focusedElement.value = focusedElement.value[:-1] if len(focusedElement.value) > 0 else ""
-				elif USER_INPUT == 10: # enter
+				elif user_input == 10: # enter
 					browser.document.submit(focusedElement)
-				elif USER_INPUT == 197: # Alt + Q
+				elif user_input == 197: # Alt + Q
 					browser.document.unfocus()
-		elif USER_INPUT == 27:
+		elif user_input == 27:
 			browser.document.unfocus()
 			browser.document.focus = -2
 		elif linkIndex != -1:
 			exiting = browser.open_link(browser.document.links[linkIndex].URL)
 
 def update():
-	global USER_INPUT
-	global exiting
+	global window, user_input
+	if window.exiting:
+			exit(0)
+	user_input = ""
 
-	if exiting:
-		exit(0)
-	USER_INPUT = None
-
-def format(string: str):
+def remove_spacing(string: str):
 	return string.replace("\t", "").replace("\n", "")
 
 def render():
+	window.start_render(0, 0)
 
-	stdscr.move(0, 0)
-
-	renderURL = extlen(
-		caplen(
+	render_url_length = window.WIDTH - 2
+	render_url = expand_len(
+		restrict_len(
 			browser.URL + ("\N{FULL BLOCK}" if browser.document.focus == -2 else ""),
-			WIDTH - 2
+			render_url_length
 		),
-		WIDTH - 2
+		render_url_length
 	)
 
-	stdscr.addstr(renderURL)
-
-	stdscr.addstr("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_NORMAL)
+	window.render(render_url, curses.A_NORMAL)
+	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_NORMAL)
 	
-	(output, styles) = renderDocument(browser.document, WIDTH, HEIGHT)
-	output = caplen(format(output), (WIDTH * (HEIGHT - 1) - 1))
+	(output, styles) = renderDocument(browser.document, window.WIDTH, window.HEIGHT)
+	output = restrict_len(
+		remove_spacing(output),
+		window.WIDTH * (window.HEIGHT - 1) - 1 # remove last line to account for URL bar, remove last character to stop scroll
+	)
+	render_pieces = get_pieces(styles, len(output))
 
-	stdscr.move(1, 0)
+	window.start_render(1, 0)
+	
+	for piece in render_pieces:
+		(startPos, endPos, col) = piece
+		window.render(output[startPos:endPos], col)
+	
+	window.disable_cursor()
+
+def get_pieces(styles: list, output_len: int):
+	pieces = []
 	for i in range(len(styles)):
 		current = styles[i]
 		follow = None
@@ -139,7 +130,7 @@ def render():
 
 		startPos = current.start
 
-		endPos = len(output)
+		endPos = output_len
 		if follow != None:
 			endPos = follow.start
 
@@ -149,8 +140,7 @@ def render():
 			col += curses.A_BOLD
 		elif current.style == "underline":
 			col += curses.A_UNDERLINE
-		
-		stdscr.addstr(output[startPos:endPos], col)
-	curses.curs_set(False)
+		pieces.append((startPos, endPos, col))
+	return pieces
 
 curses.wrapper(setup)

@@ -51,8 +51,8 @@ def loadFromURL(URL: str, browser: Browser):
 			res = stream.read()
 			stream.close()
 			return term2doc(res, browser)
-		except:
-			return Document(browser).with_message("Could not load URL.")
+		except FileNotFoundError:
+			return Document(browser).with_message("Could not load `{}`".format(file_path))
 	elif protocol == "https://" or protocol == "http://":
 		couldOpen = True
 		try:

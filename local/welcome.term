@@ -1,3 +1,4 @@
+@termtype:m100
 cont
 	-border: thin
 	-padding-top: 3

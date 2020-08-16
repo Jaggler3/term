@@ -34,15 +34,15 @@ def term2doc(contents, browser):
 				termstart = digestAttribute(command[1:])
 				passes = False
 				for tt in validFormats:
-					if termstart.valie == tt:
+					if termstart["value"] == tt:
 						passes = True
 						break
 				if not passes:
 					return _crashDoc("Term file is not in a valid format.", lineNumber)
+				continue
 				
 		if readTo > lineNumber:
 			continue
-
 
 		top: Element = getTop(elementQueue)
 
