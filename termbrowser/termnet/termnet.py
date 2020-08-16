@@ -15,7 +15,7 @@ cont
 end
 """
 
-searchPage = """
+searchPage = """@termtype:m100
 cont
 	-padding: 5
 	text:You searched for '[QUERY]'

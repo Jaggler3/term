@@ -95,6 +95,9 @@ action: my-action (
 ## Scripting
 The code executed in an action block is not of any specification or language, but is evaluated through [SimpleEval](https://pypi.org/project/simpleeval/).
 
+Methods you may use:
+`visit(url: str)` Open another page by URL
+
 ## Attributes
 Attributes for `cont` include `width`, `height`, `border`, `direction`, and `padding`.
 

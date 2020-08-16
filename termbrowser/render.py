@@ -131,7 +131,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 	elif element.type == "input":
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
 		calcWidth = defSize.x if defSize.x != -1 else 15
-		toRender = rcaplen(extlen(element.value + ("\N{FULL BLOCK}" if element.focused else ""), calcWidth), calcWidth)
+		toRender = rcaplen(expand_len(element.value + ("\N{FULL BLOCK}" if element.focused else ""), calcWidth), calcWidth)
 		toRenderLength = len(toRender)
 		alignOffset = getAlignOffset(element, parentSize)
 		borderType = "dotted thick" if element.focused else "dotted thin"
@@ -163,7 +163,7 @@ def getElementSize(element: Element) -> Vec:
 	elif element.type == "link":
 		return Vec(len(getLinkText(element)), 1)
 	elif element.type == "input":
-		return Vec(len(extlen(element.value, 10)) + 2, 3)
+		return Vec(len(expand_len(element.value, 10)) + 2, 3)
 	elif element.type == "cont":
 		childrenSize = Vec(0, 0)
 		for child in element.children:
