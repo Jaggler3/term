@@ -1,4 +1,4 @@
-from adom import Document, Element, createTextElement, Action
+from .adom import Document, Element, createTextElement, Action
 
 elementTypes = [
 	"cont",

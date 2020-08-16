@@ -4,11 +4,11 @@ import curses.ascii
 import threading
 import time
 
-from adom import Document, Element
-from browser import *
-from render import *
-from util import *
-from window import Window
+from .adom import Document, Element
+from .browser import *
+from .render import *
+from .util import *
+from .window import Window
 
 window = Window(curses.initscr())
 
@@ -93,7 +93,7 @@ def remove_spacing(string: str):
 def render():
 	window.start_render(0, 0)
 
-	render_url_length = window.WIDTH - 2
+	render_url_length = window.WIDTH - 1
 	render_url = expand_len(
 		restrict_len(
 			browser.URL + ("\N{FULL BLOCK}" if browser.document.focus == -2 else ""),
@@ -102,8 +102,8 @@ def render():
 		render_url_length
 	)
 
-	window.render(render_url, curses.A_NORMAL)
-	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_NORMAL)
+	window.render(render_url, curses.A_UNDERLINE)
+	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE)
 	
 	(output, styles) = renderDocument(browser.document, window.WIDTH, window.HEIGHT)
 	output = restrict_len(

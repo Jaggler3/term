@@ -28,7 +28,7 @@ class Window:
 		return res
 	def start_render(self, y: int, x: 0):
 		self.screen.move(y, x)
-	def render(self, string: str, option: int):
+	def render(self, string: str, option):
 		self.screen.addstr(string, option)
 	def disable_cursor(self):
 		curses.curs_set(False)

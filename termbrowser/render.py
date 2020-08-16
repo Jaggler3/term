@@ -1,6 +1,6 @@
-from adom import Document, Element
-from vector import *
-from util import *
+from .adom import Document, Element
+from .vector import *
+from .util import *
 
 class OutputStyle:
 	def __init__(self, start: Vec, style: str):

@@ -3,3 +3,8 @@ __pycache__/
 
 # IDE Settings
 .vscode/
+
+# Build
+build/
+dist/
+*.egg-info

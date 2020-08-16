@@ -1,7 +1,8 @@
 import sys
+import os
 import requests as requests
 
-from term2doc import *
+from .term2doc import *
 
 class Browser:
 	def __init__(self, initialURL: str):
@@ -45,7 +46,7 @@ def loadFromURL(URL: str, browser: Browser):
 	if protocol == None:
 		sys.exit("Error: Could not determine URL protocol `{}`".format(URL))
 	elif protocol == "term://":
-		file_path = "local/" + URL[len("term://"):] + ".term"
+		file_path = os.path.dirname(os.path.realpath(__file__)) + "/local/" + URL[len("term://"):] + ".term"
 		try:
 			stream = open(file_path)
 			res = stream.read()
