@@ -3,10 +3,14 @@
 Term is terminal-based web browser that only accepts files using the Term File Format. This browser is responsive to youtr terminal's sizing and is developer-focused. This browser will not render HTML or execute JavaScript. It does, however, implement a similar DOM model, and styling attributes are similar to CSS.
 
 ## Using the browser
-
-Start term using this command in the downloaded directory:
+Install using this command:
 ```bash
-python3 -m term
+pip3 install termbrowser
+```
+
+and start using this command:
+```bash
+python3 -m termbrowser
 ```
 
 Open links using their hotkeys ex. 1 for `[1] Link Name`
