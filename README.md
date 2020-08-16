@@ -7,10 +7,14 @@ Term is terminal-based web browser that only accepts files using the Term File F
 ![term usage](https://user-images.githubusercontent.com/11529502/90342257-ab67f880-dfd4-11ea-9e8d-f34f7ba5b74e.gif)
 
 ## Using the browser
-
-Start term using this command in the downloaded directory:
+Install using this command:
 ```bash
-python3 -m term
+pip3 install termbrowser
+```
+
+and start using this command:
+```bash
+python3 -m termbrowser
 ```
 
 Open links using their hotkeys ex. 1 for `[1] Link Name`
