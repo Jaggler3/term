@@ -1,0 +1,42 @@
+cont
+	-border: thin
+	-padding-top: 3
+	-padding-bottom: 3
+	-width: 100pc
+	text:Term v0.0.1
+		-style: bold
+		-align: center
+	end
+end
+cont
+	-height: 10pc
+end
+cont
+	-direction: row
+	cont
+		-width: 33pc
+	end
+	cont
+		link: Search the web
+			-key: 1
+			-url: http://localhost:8080/
+			-style: underline
+		end
+		cont
+			-height: 2
+		end
+		link: Open settings
+			-key: 2
+			-url: term://settings
+			-style: underline
+		end
+		cont
+			-height: 2
+		end
+		link: Exit Term
+			-key: 3
+			-url: term://exit
+			-style: underline
+		end
+	end
+end
