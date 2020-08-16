@@ -14,7 +14,7 @@ pip3 install termbrowser
 
 and start using this command:
 ```bash
-python3 -m termbrowser
+term
 ```
 
 Open links using their hotkeys ex. 1 for `[1] Link Name`

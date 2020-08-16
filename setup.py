@@ -18,7 +18,7 @@ URL = 'https://github.com/Jaggler3/term'
 EMAIL = 'martin.protostar@gmail.com'
 AUTHOR = 'Martin Darazs'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -106,12 +106,7 @@ setup(
 	url=URL,
 	packages=find_packages(
 		exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
-	# If your package is a single module, use this instead of 'packages':
-	# py_modules=['mypackage'],
-
-	# entry_points={
-	#     'console_scripts': ['mycli=mymodule:cli'],
-	# },
+	scripts=['bin/term'],
 	install_requires=REQUIRED,
 	extras_require=EXTRAS,
 	include_package_data=True,
