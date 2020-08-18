@@ -1,6 +1,5 @@
 import os
 import curses
-import curses.ascii
 import threading
 import time
 
@@ -9,6 +8,7 @@ from .browser import *
 from .render import *
 from .util import *
 from .window import Window
+from .pieces import get_pieces
 
 window = Window(curses.initscr())
 
@@ -16,6 +16,7 @@ browser = Browser("term://welcome")
 
 user_input = None
 user_input_thread_handle = None
+cursor_index = -1
 
 fps = 30 # 30 frames per second
 
@@ -32,19 +33,23 @@ def lifecycle():
 	render()
 
 	while True:
-		resized = window.get_resized()
-		if resized:
-			window.resize()
-			continue
-		update()
-		render()
-		if browser.loading:
-			browser.start_load()
-		window.refresh()
-		time.sleep(1.0 / fps)
+		try:
+			resized = window.get_resized()
+			if resized:
+				window.resize()
+				continue
+			update()
+			render()
+			if browser.loading:
+				browser.start_load()
+			window.refresh()
+			time.sleep(1.0 / fps)
+		except KeyboardInterrupt:
+			sys.exit(0)
+		
 
 def user_input_thread():
-	global window, user_input
+	global window, user_input, cursor_index
 	while True:
 		user_input = window.get_input()
 		linkIndex = browser.document.find_link(user_input)
@@ -53,31 +58,55 @@ def user_input_thread():
 			exit(0)
 		elif user_input == 9: # tab:
 			browser.document.focus_next()
+			_focused = browser.document.get_focused_element()
+			_focused.focus_cursor_index = len(_focused.value)
 		elif browser.document.focus != -1:
 			char = chr(user_input)
 			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?"
 
 			if browser.document.focus == -2: # URL
-				if inputChars.find(char) != -1:
-					browser.URL += str(char)
+				if user_input == 260: # left arrow
+					cursor_index -= 1 if cursor_index != 0 else 0
+				elif user_input == 261: # right arrow
+					cursor_index += 1 if cursor_index != len(browser.URL) else 0
+				elif inputChars.find(char) != -1:
+					browser.URL = browser.URL[:cursor_index] + str(char) + browser.URL[cursor_index:]
+					cursor_index += 1
 				elif user_input == 127: # backspace
-					browser.URL = browser.URL[:-1] if len(browser.URL) > 0 else ""
+					if len(browser.URL) == 0 or cursor_index == 0:
+						continue
+					browser.URL = browser.URL[:cursor_index - 1] + browser.URL[cursor_index:]
+					cursor_index -= 1
 				elif user_input == 10: # enter
 					browser.open_link(browser.URL)
 					browser.document.focus = -1
+					cursor_index = -1
 			else: # input element
 				focusedElement = browser.document.get_focused_element()
-				if inputChars.find(char) != -1:
-					focusedElement.value += str(char)
+
+				old_index = focusedElement.focus_cursor_index
+
+				if user_input == 260: # left arrow
+					focusedElement.focus_cursor_index -= 1 if old_index != 0 else 0
+				elif user_input == 261: # right arrow
+					focusedElement.focus_cursor_index += 1 if old_index != len(focusedElement.value) else 0
+
+				elif inputChars.find(char) != -1:
+					focusedElement.value = focusedElement.value[:old_index] + str(char) + focusedElement.value[old_index:]
+					focusedElement.focus_cursor_index += 1
 				elif user_input == 127: # backspace
-					focusedElement.value = focusedElement.value[:-1] if len(focusedElement.value) > 0 else ""
+					if len(focusedElement.value) == 0 or old_index == 0:
+						continue
+					focusedElement.value = focusedElement.value[:old_index - 1] + focusedElement.value[old_index:]
+					focusedElement.focus_cursor_index -= 1
 				elif user_input == 10: # enter
 					browser.document.submit(focusedElement)
 				elif user_input == 197: # Alt + Q
 					browser.document.unfocus()
-		elif user_input == 27:
+		elif user_input == 27: # esc
 			browser.document.unfocus()
 			browser.document.focus = -2
+			cursor_index = len(browser.URL)
 		elif linkIndex != -1:
 			exiting = browser.open_link(browser.document.links[linkIndex].URL)
 
@@ -85,6 +114,8 @@ def update():
 	global window, user_input
 	if window.exiting:
 			exit(0)
+	if browser.loading:
+		cursor_index = -1
 	user_input = ""
 
 def remove_spacing(string: str):
@@ -93,10 +124,13 @@ def remove_spacing(string: str):
 def render():
 	window.start_render(0, 0)
 
+	url_cursor = "\N{FULL BLOCK}"
 	render_url_length = window.WIDTH - 1
+	draw_cursor_end = browser.URL[cursor_index + 1:] if cursor_index < len(browser.URL) and cursor_index != -1 else ""
+	draw_cursor = browser.URL[:cursor_index] + url_cursor + draw_cursor_end
 	render_url = expand_len(
 		restrict_len(
-			browser.URL + ("\N{FULL BLOCK}" if browser.document.focus == -2 else ""),
+			draw_cursor if browser.document.focus == -2 else browser.URL,
 			render_url_length
 		),
 		render_url_length
@@ -120,27 +154,6 @@ def render():
 	
 	window.disable_cursor()
 
-def get_pieces(styles: list, output_len: int):
-	pieces = []
-	for i in range(len(styles)):
-		current = styles[i]
-		follow = None
-		if i < len(styles) - 1:
-			follow = styles[i + 1]
 
-		startPos = current.start
-
-		endPos = output_len
-		if follow != None:
-			endPos = follow.start
-
-		col = curses.A_REVERSE
-
-		if current.style == "bold":
-			col += curses.A_BOLD
-		elif current.style == "underline":
-			col += curses.A_UNDERLINE
-		pieces.append((startPos, endPos, col))
-	return pieces
 
 curses.wrapper(setup)

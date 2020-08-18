@@ -19,6 +19,7 @@ def _crashDoc(reason: str, lineNumber: int):
 def term2doc(contents, browser):
 	res = Document(browser)
 
+	contents = contents.strip(" \n\r")
 	lines: list = contents.splitlines()
 	
 	elementQueue: list = []
@@ -82,7 +83,7 @@ def term2doc(contents, browser):
 					linkKey = ele.getAttribute("key")
 					linkURL = ele.getAttribute("url")
 					if(linkKey == None or linkURL == None):
-						return _crashDoc("Link element requires attributes (key, url)")
+						return _crashDoc("Link element requires attributes (key, url)", lineNumber)
 					res.add_link(linkKey, linkURL)
 
 				if len(elementQueue) == 0:

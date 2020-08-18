@@ -1,6 +1,7 @@
 import sys
 import os
 import requests as requests
+from time import sleep
 
 from .term2doc import *
 
@@ -56,9 +57,16 @@ def loadFromURL(URL: str, browser: Browser):
 			return Document(browser).with_message("Could not load `{}`".format(file_path))
 	elif protocol == "https://" or protocol == "http://":
 		couldOpen = True
+		sleep(.1)
 		try:
-			r = requests.get(URL)
-			return term2doc(r.text, browser)
-		except:
-			return Document(browser).with_message("Could not load URL.")
-	
+			return makeRequest(browser, URL)
+		except Exception as e:
+			return Document(browser).with_message("Could not load URL. \n" + str(e))
+
+def makeRequest(browser: Browser, url: str):
+	try:
+		page = requests.get(url, headers={"content-type": "term"}).text
+		return term2doc(page, browser)
+	except Exception as e:
+		return Document(browser).with_message("Could not load URL. \n" + str(e))
+	return Document(browser).with_message("Could not load URL.")

@@ -42,7 +42,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 	writeSize = Vec(0, 0)
 
 	if element.type == "cont":
-		padding = getPadding(element)
+		padding = getPadding(element, WIDTH, HEIGHT)
 		direction = getDirection(element)
 		borderType = element.getAttribute("border")
 		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
@@ -63,7 +63,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		# get children size (uncalculated pc)
 		for child in element.children:
 			defSingleSize = getDefinedSize(child, WIDTH, HEIGHT)
-			otherSingleSize = getElementSize(child)
+			otherSingleSize = getElementSize(child, WIDTH, HEIGHT)
 			singleSize = Vec(
 				otherSingleSize.x if defSingleSize.x == -1 else defSingleSize.x,
 				otherSingleSize.y if defSingleSize.y == -1 else defSingleSize.y
@@ -131,7 +131,18 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 	elif element.type == "input":
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
 		calcWidth = defSize.x if defSize.x != -1 else 15
-		toRender = rcaplen(expand_len(element.value + ("\N{FULL BLOCK}" if element.focused else ""), calcWidth), calcWidth)
+		renderCursor = "\N{FULL BLOCK}" if element.focused else ""
+		val = element.value
+		idx = element.focus_cursor_index
+		draw_cursor_end = val[idx + 1:] if idx < len(val) and idx != -1 else ""
+		draw_cursor = val[:idx] + renderCursor + draw_cursor_end
+		toRender = rcaplen(
+			expand_len(
+				draw_cursor if idx != -1 else val,
+				calcWidth
+			),
+			calcWidth
+		)
 		toRenderLength = len(toRender)
 		alignOffset = getAlignOffset(element, parentSize)
 		borderType = "dotted thick" if element.focused else "dotted thin"
@@ -157,7 +168,7 @@ def getAlignOffset(element: Element, parentSize: Vec) -> int:
 		return round(float(parentSize.x) / 2.0) - round(float(len(val)) / 2.0)
 	return 0
 
-def getElementSize(element: Element) -> Vec:
+def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	if element.type == "text":
 		return Vec(len(element.value), 1)
 	elif element.type == "link":
@@ -166,8 +177,14 @@ def getElementSize(element: Element) -> Vec:
 		return Vec(len(expand_len(element.value, 10)) + 2, 3)
 	elif element.type == "cont":
 		childrenSize = Vec(0, 0)
+		padding = getPadding(element, WIDTH, HEIGHT)
+		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
+		defSize = getDefinedSize(element, WIDTH, HEIGHT)
+		hasDefWidth = defSize.x != -1
+		hasDefHeight = defSize.y != -1
+
 		for child in element.children:
-			singleSize = getElementSize(child)
+			singleSize = getElementSize(child, WIDTH, HEIGHT)
 			direction = getDirection(element)
 			if direction == "row":
 				childrenSize.x += singleSize.x
@@ -175,7 +192,13 @@ def getElementSize(element: Element) -> Vec:
 			elif direction == "column":
 				childrenSize.y += singleSize.y
 				childrenSize.x = max(childrenSize.x, singleSize.x)
-		return childrenSize
+		
+		res = Vec(
+			defSize.x if hasDefWidth else childrenSize.x + paddingSize.x,
+			defSize.y if hasDefHeight else childrenSize.y + paddingSize.y
+		)
+
+		return res
 	return None
 
 def renderBorder(type: str, pos: Vec, size: Vec, res: list):
@@ -259,7 +282,7 @@ def parseSize(size, MAX) -> int:
 		else:
 			return -1
 
-def getPadding(element: Element) -> dict:
+def getPadding(element: Element, width: int, height: int) -> dict:
 	paddingOut = {
 		'top': 0,
 		'bottom': 0,
@@ -274,25 +297,26 @@ def getPadding(element: Element) -> dict:
 	padding_right = element.getAttribute("padding-right")
 
 	if padding != None:
-		paddingVal = int(padding)
+		vert = parseSize(padding, height)
+		horiz = parseSize(padding, width)
 		paddingOut = {
-			'top': paddingVal,
-			'bottom': paddingVal,
-			'left': paddingVal,
-			'right': paddingVal
+			'top': vert,
+			'bottom': vert,
+			'left': horiz,
+			'right': horiz
 		}
 	
 	if padding_top != None:
-		paddingOut['top'] += int(padding_top)
+		paddingOut['top'] += parseSize(padding_top, height)
 		
 	if padding_bottom != None:
-		paddingOut['bottom'] += int(padding_bottom)
+		paddingOut['bottom'] += parseSize(padding_bottom, height)
 	
 	if padding_left != None:
-		paddingOut['left'] += int(padding_left)
+		paddingOut['left'] += parseSize(padding_left, width)
 
 	if padding_right != None:
-		paddingOut['right'] += int(padding_right)
+		paddingOut['right'] += parseSize(padding_right, width)
 
 	return paddingOut
 

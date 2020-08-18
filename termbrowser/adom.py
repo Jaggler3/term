@@ -19,6 +19,7 @@ class Element:
 		self.attributes = []
 		self.children = []
 		self.focused = False
+		self.focus_cursor_index = 0
 	
 	def setAttribute(self, name, value):
 		self.attributes.append(Attribute(name, value))
