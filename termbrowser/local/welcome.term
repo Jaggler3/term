@@ -4,7 +4,7 @@ cont
 	-padding-top: 3
 	-padding-bottom: 3
 	-width: 100pc
-	text:Term v0.1.4
+	text:Term v0.1.5
 		-style: bold
 		-align: center
 	end
