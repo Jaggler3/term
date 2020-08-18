@@ -2,6 +2,7 @@ import os
 import curses
 import threading
 import time
+import pyperclip
 
 from .adom import Document, Element
 from .browser import *
@@ -17,6 +18,8 @@ browser = Browser("term://welcome")
 user_input = None
 user_input_thread_handle = None
 cursor_index = -1
+
+paste_mode = False
 
 fps = 30 # 30 frames per second
 
@@ -46,6 +49,8 @@ def lifecycle():
 			time.sleep(1.0 / fps)
 		except KeyboardInterrupt:
 			sys.exit(0)
+		except Exception as e:
+			exit(str(e))
 		
 
 def user_input_thread():
@@ -53,7 +58,7 @@ def user_input_thread():
 	while True:
 		user_input = window.get_input()
 		linkIndex = browser.document.find_link(user_input)
-		if user_input == ord("`"):
+		if user_input == ord("`") and browser.document.focus == -1:
 			window.exiting = True
 			exit(0)
 		elif user_input == 9: # tab:
@@ -62,16 +67,17 @@ def user_input_thread():
 			_focused.focus_cursor_index = len(_focused.value)
 		elif browser.document.focus != -1:
 			char = chr(user_input)
-			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?"
-
+			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?`~"
+			# browser.URL += str(user_input) + char
 			if browser.document.focus == -2: # URL
-				if user_input == 260: # left arrow
+				if user_input == 226: # alt + v to enable paste
+					toInsert = remove_spacing(pyperclip.paste())
+					browser.URL = browser.URL[:cursor_index] + toInsert + browser.URL[cursor_index:]
+					cursor_index += len(toInsert)
+				elif user_input == 260: # left arrow
 					cursor_index -= 1 if cursor_index != 0 else 0
 				elif user_input == 261: # right arrow
 					cursor_index += 1 if cursor_index != len(browser.URL) else 0
-				elif inputChars.find(char) != -1:
-					browser.URL = browser.URL[:cursor_index] + str(char) + browser.URL[cursor_index:]
-					cursor_index += 1
 				elif user_input == 127: # backspace
 					if len(browser.URL) == 0 or cursor_index == 0:
 						continue
@@ -81,12 +87,19 @@ def user_input_thread():
 					browser.open_link(browser.URL)
 					browser.document.focus = -1
 					cursor_index = -1
+				elif inputChars.find(char) != -1:
+					browser.URL = browser.URL[:cursor_index] + str(char) + browser.URL[cursor_index:]
+					cursor_index += 1
 			else: # input element
 				focusedElement = browser.document.get_focused_element()
 
 				old_index = focusedElement.focus_cursor_index
 
-				if user_input == 260: # left arrow
+				if user_input == 226: # alt + v to enable paste
+					toInsert = remove_spacing(pyperclip.paste())
+					focusedElement.value = focusedElement.value[:old_index] + toInsert + focusedElement.value[old_index:]
+					focusedElement.focus_cursor_index += len(toInsert)
+				elif user_input == 260: # left arrow
 					focusedElement.focus_cursor_index -= 1 if old_index != 0 else 0
 				elif user_input == 261: # right arrow
 					focusedElement.focus_cursor_index += 1 if old_index != len(focusedElement.value) else 0

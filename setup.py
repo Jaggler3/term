@@ -22,7 +22,7 @@ VERSION = '0.1.4'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-	'requests', 'simpleeval',
+	'requests', 'simpleeval', 'pyperclip'
 ]
 
 # What packages are optional?

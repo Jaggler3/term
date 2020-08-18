@@ -19,7 +19,7 @@ cont
 	end
 	cont
 		-padding-bottom: 3
-		link: Search the web
+		link:Search the web
 			-key: 1
 			-url: http://localhost:3000/
 			-style: underline
@@ -27,7 +27,7 @@ cont
 		cont
 			-height: 2
 		end
-		link: Open settings
+		link:Open settings
 			-key: 2
 			-url: term://settings
 			-style: underline
@@ -35,7 +35,7 @@ cont
 		cont
 			-height: 2
 		end
-		link: Exit Term
+		link:Exit Term
 			-key: 3
 			-url: term://exit
 			-style: underline
@@ -49,5 +49,8 @@ cont
 	text:Press Escape + Escape to edit the URL.
 	end
 	text:Press ` (the ~ key) to force exit.
+	end
+	text:Pres Alt + Q to paste (Option + Q on Mac)
+		-style: underline
 	end
 end
