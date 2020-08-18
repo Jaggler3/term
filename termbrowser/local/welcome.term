@@ -21,7 +21,7 @@ cont
 		-padding-bottom: 3
 		link:Search the web
 			-key: 1
-			-url: http://localhost:3000/
+			-url: https://term-search.herokuapp.com/
 			-style: underline
 		end
 		cont
