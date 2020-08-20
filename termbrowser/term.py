@@ -48,8 +48,10 @@ def lifecycle():
 			window.refresh()
 			time.sleep(1.0 / fps)
 		except KeyboardInterrupt:
+			curses.endwin()
 			sys.exit(0)
 		except Exception as e:
+			curses.endwin()
 			exit(str(e))
 		
 
@@ -60,6 +62,7 @@ def user_input_thread():
 		linkIndex = browser.document.find_link(user_input)
 		if user_input == ord("`") and browser.document.focus == -1:
 			window.exiting = True
+			curses.endwin()
 			exit(0)
 		elif user_input == 9: # tab:
 			browser.document.focus_next()
