@@ -2,35 +2,67 @@ import sys
 import os
 import requests as requests
 from time import sleep
+import simpleeval
 
-from .term2doc import *
+import termbrowser.adom
 
 class Browser:
 	def __init__(self, initialURL: str):
-		self.document = Document(self)
+		self.document = termbrowser.adom.Document(self)
 		self.URL = initialURL
 		self.loading = True
+		self.context = {}
+		self.debugHistory = ""
 
 	def start_load(self):
 		if not self.loading:
 			return
+		self.evaluator = self.createEvaluator() # reset evaluator before new page is loaded
 		self.document = loadFromURL(self.URL, self)
 		self.loading = False
+		self.document.call_document_action("start", {})
 		if self.document.hasInputs:
 			self.document.focus_next()
+
+	def createEvaluator(self):
+		evaluator = simpleeval.EvalWithCompoundTypes()
+		evaluator.functions = simpleeval.DEFAULT_FUNCTIONS
+		evaluator.functions.update(self.script_functions())
+		return evaluator
 	
 	# returns if the browser should exit
 	def open_link(self, URL: str) -> bool:
 		if URL != "term://exit":
 			if URL.startswith("term://") and not self.URL.startswith("term://"):
-				self.document = Document(self)
-				self.document.elements.append(createTextElement("Can not open term:// links. Only Term can open these links."))
+				self.document = termbrowser.adom.Document(self)
+				self.document.elements.append(termbrowser.adom.createTextElement("Can not open term:// links. Only Term can open these links."))
 			else:
-				self.loading = True
 				self.URL = URL
+				self.loading = True
 			return False
 		else:
 			return True
+
+	def var(self, name: str, value):
+		self.context[name] = value
+
+	def getvar(self, name: str):
+		return self.context[name]
+
+	def encode(self, text: str):
+		return text
+
+	def debug(self, text: str):
+		self.debugHistory += text + "\n"
+
+	def script_functions(self):
+		return {
+			"visit": self.open_link,
+			"getvar": self.getvar,
+			"var": self.var,
+			"encode": self.encode,
+			"debug": self.debug
+		}
 
 """
 term:// -> files in the ./local/ folder of the term project
@@ -52,21 +84,21 @@ def loadFromURL(URL: str, browser: Browser):
 			stream = open(file_path)
 			res = stream.read()
 			stream.close()
-			return term2doc(res, browser)
+			return termbrowser.adom.term2doc(res, browser)
 		except FileNotFoundError:
-			return Document(browser).with_message("Could not load `{}`".format(file_path))
+			return termbrowser.adom.Document(browser).with_message("Could not load `{}`".format(file_path))
 	elif protocol == "https://" or protocol == "http://":
 		couldOpen = True
 		sleep(.1)
 		try:
 			return makeRequest(browser, URL)
 		except Exception as e:
-			return Document(browser).with_message("Could not load URL. \n" + str(e))
+			return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
 
 def makeRequest(browser: Browser, url: str):
 	try:
 		page = requests.get(url, headers={"content-type": "term"}).text
-		return term2doc(page, browser)
+		return termbrowser.adom.term2doc(page, browser)
 	except Exception as e:
-		return Document(browser).with_message("Could not load URL. \n" + str(e))
-	return Document(browser).with_message("Could not load URL.")
+		return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
+	return termbrowser.adom.Document(browser).with_message("Could not load URL.")

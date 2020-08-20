@@ -21,7 +21,7 @@ cursor_index = -1
 
 paste_mode = False
 
-fps = 30 # 30 frames per second
+fps = 20 # 20 frames per second
 
 def setup(screen):
 	lifecycle()

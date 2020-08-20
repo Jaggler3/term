@@ -2,6 +2,16 @@ from .adom import Document, Element
 from .vector import *
 from .util import *
 
+from textwrap import TextWrapper
+
+text_wrapper = TextWrapper(
+	replace_whitespace=False,
+	break_long_words=True,
+	expand_tabs=True,
+	tabsize=4,
+	#drop_whitespace=True # try this out??
+)
+
 class OutputStyle:
 	def __init__(self, start: Vec, style: str):
 		self.start = start
@@ -104,30 +114,71 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 	elif element.type == "text" and element.value != "":
 		alignOffset = getAlignOffset(element, parentSize)
-		writeSize = Vec(len(element.value), 1)
+		maxWidth = WIDTH
+		if parentSize != None:
+			maxWidth = parentSize.x
+		widthAttr = element.getAttribute("width")
+		renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
+
+		wrapped_text_size = getWrapAndSize(element.value, renderWidth)
+		wrapped_text = wrapped_text_size["text"]
+		wrapped_size = wrapped_text_size["size"]
+
+		writeSize = wrapped_size
 		startPos = x + alignOffset
+
 		textStyle = element.getAttribute("style")
-		if textStyle != None and textStyle.startswith(allStyles):
-			styles.append(OutputStyle(Vec(startPos, y), textStyle))
-			styles.append(OutputStyle(Vec(startPos + len(element.value), y), "normal"))
-		newRow = res[y][0:startPos]
-		newRow += element.value
-		newRow += res[y][startPos + len(element.value):]
-		res[y] = newRow
+		
+		renderRows = wrapped_text.splitlines()
+		for rowIndex in range(len(renderRows)):
+			rowText = renderRows[rowIndex]
+			rowTextLen = len(rowText)
+			renderY = y + rowIndex
+
+			if len(res) > renderY:
+				if textStyle != None and textStyle.startswith(allStyles):
+					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
+					styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
+				newRow = res[renderY][0:startPos]
+				newRow += rowText
+				newRow += res[renderY][startPos + rowTextLen:]
+				res[renderY] = newRow
+		
 	elif element.type == "link":
 		toRender = getLinkText(element)
 		toRenderLength = len(toRender)
+		
 		alignOffset = getAlignOffset(element, parentSize)
-		writeSize = Vec(toRenderLength, 1)
+		maxWidth = WIDTH
+		if parentSize != None:
+			maxWidth = parentSize.x
+		widthAttr = element.getAttribute("width")
+		renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
+
+		wrapped_text_size = getWrapAndSize(toRender, renderWidth)
+		wrapped_text = wrapped_text_size["text"]
+		wrapped_size = wrapped_text_size["size"]
+
+		writeSize = wrapped_size
 		startPos = x + alignOffset
+
 		textStyle = element.getAttribute("style")
-		if textStyle != None and textStyle.startswith(allStyles):
-			styles.append(OutputStyle(Vec(startPos, y), textStyle))
-			styles.append(OutputStyle(Vec(startPos + toRenderLength, y), "normal"))
-		newRow = res[y][0:startPos]
-		newRow += toRender
-		newRow += res[y][startPos + toRenderLength:]
-		res[y] = newRow
+		
+		renderRows = wrapped_text.splitlines()
+		for rowIndex in range(len(renderRows)):
+			rowText = renderRows[rowIndex]
+			rowTextLen = len(rowText)
+			renderY = y + rowIndex
+			
+			if len(res) > renderY:
+				if textStyle != None and textStyle.startswith(allStyles):
+					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
+					styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
+				newRow = res[renderY][0:startPos]
+				newRow += rowText
+				newRow += res[renderY][startPos + rowTextLen:]
+				res[renderY] = newRow
+		
 	elif element.type == "input":
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
 		calcWidth = defSize.x if defSize.x != -1 else 15
@@ -143,38 +194,63 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			),
 			calcWidth
 		)
+
 		toRenderLength = len(toRender)
 		alignOffset = getAlignOffset(element, parentSize)
 		borderType = "dotted thick" if element.focused else "dotted thin"
 		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
 		writeSize = Vec(toRenderLength, 3)
 		startPos = x + alignOffset + 1
-		newRow = res[y + 1][0:startPos]
-		newRow += toRender
-		newRow += res[y + 1][startPos + toRenderLength:]
-		res[y + 1] = newRow
-
+		if len(res) > y + 1:
+			newRow = res[y + 1][0:startPos]
+			newRow += toRender
+			newRow += res[y + 1][startPos + toRenderLength:]
+			res[y + 1] = newRow
 	return writeSize
 
 def getLinkText(element):
 	return "[" + element.getAttribute("key") + "] " + element.value 
 
+def getWrapAndSize(text: str, maxWidth: int):
+	if maxWidth == None:
+		return {
+			"text": text,
+			"size": Vec(len(text), 1)
+		}
+	text_wrapper.width = maxWidth
+	wrappedText = text_wrapper.fill(text)
+	return {
+		"text": wrappedText,
+		"size": Vec(maxWidth if maxWidth < len(text) else len(text), len(wrappedText.splitlines()))
+	}
+
 def getAlignOffset(element: Element, parentSize: Vec) -> int:
 	val = element.value
 	if element.type == "link":
 		val = getLinkText(element)
+	
 	align = element.getAttribute("align")
+	defWidth = getDefinedSize(element, parentSize.x, parentSize.y).x
+	wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x)
 	if align == "center":
-		return round(float(parentSize.x) / 2.0) - round(float(len(val)) / 2.0)
+		return round(float(parentSize.x) / 2.0) - round(float(wrapped["size"].x) / 2.0)
 	return 0
 
 def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	if element.type == "text":
-		return Vec(len(element.value), 1)
+		widthAttr = element.getAttribute("width")
+		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
+		wrapped_text_size = getWrapAndSize(element.value, renderWidth)
+		return wrapped_text_size["size"]
 	elif element.type == "link":
-		return Vec(len(getLinkText(element)), 1)
+		widthAttr = element.getAttribute("width")
+		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
+		wrapped_text_size = getWrapAndSize(getLinkText(element), renderWidth)
+		return wrapped_text_size["size"]
 	elif element.type == "input":
-		return Vec(len(expand_len(element.value, 10)) + 2, 3)
+		widthAttr = element.getAttribute("width")
+		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
+		return Vec(renderWidth + 2, 3)
 	elif element.type == "cont":
 		childrenSize = Vec(0, 0)
 		padding = getPadding(element, WIDTH, HEIGHT)
