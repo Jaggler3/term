@@ -1,3 +1,12 @@
+# > Term Browser <
+
+# interpret args
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--url", help="the URL you would like to visit")
+args = parser.parse_args()
+INIT_URL = args.url
+
 import os
 import curses
 import threading
@@ -13,7 +22,7 @@ from .pieces import get_pieces
 
 window = Window(curses.initscr())
 
-browser = Browser("term://welcome")
+browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
 
 user_input = None
 user_input_thread_handle = None
