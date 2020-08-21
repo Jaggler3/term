@@ -1,62 +1,56 @@
 @termtype:m100
 
+# top bar
 cont
-	-border: thin
-	-padding-top: 3
-	-padding-bottom: 3
+	-direction:row
+	cont
+		-width: 20pc
+		-border: thin
+		link:Home
+			-align: center
+			-key: 1
+			-url: http://link
+		end
+	end
+	cont
+		-width: 20pc
+		-border: thin
+		link:My Work
+			-align: center
+			-key: 2
+			-url: http://link
+		end
+	end
+	cont
+		-width: 40pc
+	end
+	cont
+		-width: 20pc
+		-border: thin
+		link:Contact
+			-align: center
+			-key: 3
+			-url: http://link
+		end
+	end
+end
+cont
+	-height: 3
+end
+cont
 	-width: 100pc
-	text:Term v0.1.5 this is reall real is reall realy really really long lolo really reall realy really really long lolo reallyreall realy really really long lolo really
-		-width: 50pc
+	text:Ibrahim Salman
 		-style: bold
 		-align: center
 	end
 end
 cont
-	-height: 10pc
-end
-cont
-	-direction: row
-	cont
-		-width: 33pc
-	end
-	cont
-		-padding-bottom: 3
-		link:Search the web
-			-key: 1
-			-url: https://term-search.herokuapp.com/
-			-style: underline
-		end
-		cont
-			-height: 2
-		end
-		link:Open settings
-			-key: 2
-			-url: term://settings
-			-style: underline
-		end
-		cont
-			-height: 2
-		end
-		link:Exit Term
-			-key: 3
-			-url: term://exit
-			-style: underline
-		end
+	-width: 100pc
+	-padding: 3
+	text:Welcome to my Term website. Here you can find lots of things about me and my work.
 	end
 end
-cont
-	-padding-left: 33pc
-	text:Press a hotkey ([1], [2], or [3]) to open a link.
-	end
-	text:Press Escape + Escape to edit the URL.
-	end
-	text:Press ` (the ~ key) to force exit.
-	end
-	text:Pres Alt + Q to paste (Option + Q on Mac)
-		-style: underline
-	end
-end
+
 action:[start](
-	debug("hello"),
-	debug("world!")
+	debug("Hello debugger!"),
 )

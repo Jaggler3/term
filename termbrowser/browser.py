@@ -1,4 +1,4 @@
-import sys
+import sys, traceback
 import os
 import requests as requests
 from time import sleep
@@ -12,7 +12,8 @@ class Browser:
 		self.URL = initialURL
 		self.loading = True
 		self.context = {}
-		self.debugHistory = ""
+		self.debugHistory = "Debugger: Press Alt+K to close.\n"
+		self.debugMode = False
 
 	def start_load(self):
 		if not self.loading:
@@ -93,6 +94,7 @@ def loadFromURL(URL: str, browser: Browser):
 		try:
 			return makeRequest(browser, URL)
 		except Exception as e:
+			traceback.print_exc(file=sys.stdout)
 			return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
 
 def makeRequest(browser: Browser, url: str):
@@ -100,5 +102,6 @@ def makeRequest(browser: Browser, url: str):
 		page = requests.get(url, headers={"content-type": "term"}).text
 		return termbrowser.adom.term2doc(page, browser)
 	except Exception as e:
+		traceback.print_exc(file=sys.stdout)
 		return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
 	return termbrowser.adom.Document(browser).with_message("Could not load URL.")

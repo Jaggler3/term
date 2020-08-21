@@ -43,6 +43,20 @@ def renderDocument(document: Document, width: int, height: int):
 def clearScreen(width: int, height: int) -> list:
 	return [" " * width] * height
 
+def renderDebugger(text: str, width: int, height: int) -> str:
+	textlines = text.splitlines()
+	if len(textlines) > height:
+		textlines = textlines[-height:]
+	out = ""
+	for line in textlines:
+		out += restrict_len(expand_len(line, width), width)
+	
+	for i in range(height - len(textlines)):
+		out += " " * width
+	
+	return out
+	
+
 allStyles = (
 	"bold",
 	"underline"
@@ -113,10 +127,9 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			writeSize = contSize
 
 	elif element.type == "text" and element.value != "":
-		alignOffset = getAlignOffset(element, parentSize)
-		maxWidth = WIDTH
-		if parentSize != None:
-			maxWidth = parentSize.x
+		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
+		alignOffset = getAlignOffset(element, outerSize)
+		maxWidth = outerSize.x
 		widthAttr = element.getAttribute("width")
 		renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
 

@@ -8,6 +8,7 @@ args = parser.parse_args()
 INIT_URL = args.url
 
 import os
+import traceback
 import curses
 import threading
 import time
@@ -20,25 +21,26 @@ from .util import *
 from .window import Window
 from .pieces import get_pieces
 
-window = Window(curses.initscr())
+window: Window = Window(curses.initscr())
 
-browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
+browser: Browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
 
 user_input = None
 user_input_thread_handle = None
-cursor_index = -1
+cursor_index: int = -1
 
-paste_mode = False
+paste_mode: bool = False
 
-fps = 20 # 20 frames per second
+fps: int = 20 # 20 frames per second
 
 def setup(screen):
+	window = Window(screen)
 	lifecycle()
 
 def lifecycle():
 	global window, user_input_thread_handle
 
-	user_input_thread_handle = threading.Thread(name ='daemon', target=user_input_thread, args=())
+	user_input_thread_handle = threading.Thread(name="daemon", target=user_input_thread, args=())
 	user_input_thread_handle.setDaemon(True)
 	user_input_thread_handle.start()
 
@@ -61,6 +63,7 @@ def lifecycle():
 			sys.exit(0)
 		except Exception as e:
 			curses.endwin()
+			traceback.print_exc(file=sys.stdout)
 			exit(str(e))
 		
 
@@ -71,8 +74,13 @@ def user_input_thread():
 		linkIndex = browser.document.find_link(user_input)
 		if user_input == ord("`") and browser.document.focus == -1:
 			window.exiting = True
+			curses.nocbreak()
+			curses.echo()
+			window.screen.keypad(0)
 			curses.endwin()
 			exit(0)
+		elif user_input == 203: # Alt + K (or Alt + I + I?)
+			browser.debugMode = not browser.debugMode
 		elif user_input == 9: # tab:
 			browser.document.focus_next()
 			_focused = browser.document.get_focused_element()
@@ -149,6 +157,7 @@ def remove_spacing(string: str):
 def render():
 	window.start_render(0, 0)
 
+	# URL
 	url_cursor = "\N{FULL BLOCK}"
 	render_url_length = window.WIDTH - 1
 	draw_cursor_end = browser.URL[cursor_index + 1:] if cursor_index < len(browser.URL) and cursor_index != -1 else ""
@@ -160,23 +169,29 @@ def render():
 		),
 		render_url_length
 	)
-
 	window.render(render_url, curses.A_UNDERLINE)
+	# Check and Loading symbols
 	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE)
 	
+	# Document
 	(output, styles) = renderDocument(browser.document, window.WIDTH, window.HEIGHT)
 	output = restrict_len(
 		remove_spacing(output),
 		window.WIDTH * (window.HEIGHT - 1) - 1 # remove last line to account for URL bar, remove last character to stop scroll
 	)
 	render_pieces = get_pieces(styles, len(output))
-
 	window.start_render(1, 0)
-	
 	for piece in render_pieces:
 		(startPos, endPos, col) = piece
 		window.render(output[startPos:endPos], col)
+
+	# Debugger
+	debugHeight = 8
+	if browser.debugMode:
+		window.start_render(window.HEIGHT - debugHeight, 0)
+		window.render(renderDebugger(browser.debugHistory, window.WIDTH, debugHeight)[:-1], curses.A_NORMAL)
 	
+	# Disable Cursor
 	window.disable_cursor()
 
 
