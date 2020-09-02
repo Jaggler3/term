@@ -64,7 +64,7 @@ def lifecycle():
 		except Exception as e:
 			curses.endwin()
 			traceback.print_exc(file=sys.stdout)
-			exit(str(e))
+			browser.debug(str(e))
 		
 
 def user_input_thread():

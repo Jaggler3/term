@@ -78,7 +78,7 @@ def loadFromURL(URL: str, browser: Browser):
 			protocol = p
 			break
 	if protocol == None:
-		sys.exit("Error: Could not determine URL protocol `{}`".format(URL))
+		return termbrowser.adom.Document(browser).with_message("Error: Could not determine URL protocol `{}`".format(URL))
 	elif protocol == "term://":
 		file_path = os.path.dirname(os.path.realpath(__file__)) + "/local/" + URL[len("term://"):] + ".term"
 		try:
@@ -94,7 +94,7 @@ def loadFromURL(URL: str, browser: Browser):
 		try:
 			return makeRequest(browser, URL)
 		except Exception as e:
-			traceback.print_exc(file=sys.stdout)
+			browser.debug(str(e))
 			return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
 
 def makeRequest(browser: Browser, url: str):
@@ -102,6 +102,6 @@ def makeRequest(browser: Browser, url: str):
 		page = requests.get(url, headers={"content-type": "term"}).text
 		return termbrowser.adom.term2doc(page, browser)
 	except Exception as e:
-		traceback.print_exc(file=sys.stdout)
+		browser.debug(str(e))
 		return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
 	return termbrowser.adom.Document(browser).with_message("Could not load URL.")

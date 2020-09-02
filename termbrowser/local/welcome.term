@@ -52,7 +52,9 @@ cont
 	end
 	text:Press ` (the ~ key) to force exit.
 	end
-	text:Pres Alt + Q to paste (Option + Q on Mac)
+	text:Press Alt + K to open the debugger. (Option + K on Mac)
+	end
+	text:Pres Alt + Q to paste (Option + Q on Mac).
 		-style: underline
 	end
 end

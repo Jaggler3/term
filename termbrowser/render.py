@@ -161,7 +161,8 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		toRender = getLinkText(element)
 		toRenderLength = len(toRender)
 		
-		alignOffset = getAlignOffset(element, parentSize)
+		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
+		alignOffset = getAlignOffset(element, outerSize)
 		maxWidth = WIDTH
 		if parentSize != None:
 			maxWidth = parentSize.x
@@ -209,7 +210,10 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		)
 
 		toRenderLength = len(toRender)
-		alignOffset = getAlignOffset(element, parentSize)
+
+		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
+		alignOffset = getAlignOffset(element, outerSize)
+
 		borderType = "dotted thick" if element.focused else "dotted thin"
 		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
 		writeSize = Vec(toRenderLength, 3)
@@ -350,6 +354,7 @@ def getDefinedSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	res = Vec(-1, -1)
 	defWidth = element.getAttribute("width")
 	defHeight = element.getAttribute("height")
+	padding = getPadding(element, WIDTH, HEIGHT)
 	if defWidth != None:
 		res.x = parseSize(defWidth, WIDTH)
 	if defHeight != None:

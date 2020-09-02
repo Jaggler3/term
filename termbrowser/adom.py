@@ -180,8 +180,8 @@ validFormats = [
 	"m100"
 ]
 
-def _crashDoc(reason: str, lineNumber: int):
-	doc = Document(None)
+def _crashDoc(reason: str, lineNumber: int, browser):
+	doc = Document(browser)
 	doc.elements = [createTextElement("Line {}: ".format(lineNumber + 1) + reason)]
 	return doc
 
@@ -199,7 +199,7 @@ def term2doc(contents, browser):
 
 		if lineNumber == 0:
 			if not command.startswith("@termtype"):
-				return _crashDoc("Term files must start with @termtype:[a valid termtype].\nex. @termtype:m100", lineNumber)
+				return _crashDoc("Term files must start with @termtype:[a valid termtype].\nex. @termtype:m100", lineNumber, browser)
 			else:
 				termstart = digestAttribute(command[1:])
 				passes = False
@@ -208,7 +208,7 @@ def term2doc(contents, browser):
 						passes = True
 						break
 				if not passes:
-					return _crashDoc("Term file is not in a valid format.", lineNumber)
+					return _crashDoc("Term file is not in a valid format.", lineNumber, browser)
 				continue
 				
 		if readTo > lineNumber:
@@ -220,12 +220,12 @@ def term2doc(contents, browser):
 			continue
 		elif command.startswith("-"):
 			if top == None:
-				return _crashDoc("No element for attribute to be assigned.", lineNumber)
+				return _crashDoc("No element for attribute to be assigned.", lineNumber, browser)
 			else:
 				result: dict = digestAttribute(command[1:])
 
 				if result == None:
-					return _crashDoc("Could not interpret attribute.", lineNumber)
+					return _crashDoc("Could not interpret attribute.", lineNumber, browser)
 				else:
 					top.setAttribute(result["name"], result["value"])
 			
@@ -244,7 +244,7 @@ def term2doc(contents, browser):
 			
 		elif command.startswith("end"):
 			if top == None:
-				return _crashDoc("No element for `end` keyword to complete.", lineNumber)
+				return _crashDoc("No element for `end` keyword to complete.", lineNumber, browser)
 			else:
 				ele: Element = elementQueue.pop()
 
@@ -252,7 +252,7 @@ def term2doc(contents, browser):
 					linkKey = ele.getAttribute("key")
 					linkURL = ele.getAttribute("url")
 					if(linkKey == None or linkURL == None):
-						return _crashDoc("Link element requires attributes (key, url)", lineNumber)
+						return _crashDoc("Link element requires attributes (key, url)", lineNumber, browser)
 					res.add_link(linkKey, linkURL)
 
 				if len(elementQueue) == 0:
@@ -260,15 +260,15 @@ def term2doc(contents, browser):
 		elif command.startswith("action"):
 			comIndex = command.find(":")
 			if comIndex == -1:
-				return _crashDoc("Could not find `:` following the `action` declaration. This needs to be on the same line.", lineNumber)
+				return _crashDoc("Could not find `:` following the `action` declaration. This needs to be on the same line.", lineNumber, browser)
 			between = command[len("action"):comIndex]
 			if between.strip() != "":
-				return _crashDoc("Unrecognized `" + between + "`.", lineNumber)
+				return _crashDoc("Unrecognized `" + between + "`.", lineNumber, browser)
 			
 			# determine action name
 			startIndex = command.find("(", comIndex)
 			if startIndex == -1:
-				return _crashDoc("Could not find `(` following the `action:` declaration. This needs to be on the same line.", lineNumber)
+				return _crashDoc("Could not find `(` following the `action:` declaration. This needs to be on the same line.", lineNumber, browser)
 
 			actionName = command[comIndex + 1:startIndex].strip()
 
@@ -297,14 +297,14 @@ def term2doc(contents, browser):
 						openCount -= 1
 
 					if openCount < 0:
-						return _crashDoc("Unexpected `)`.", lineNumber)
+						return _crashDoc("Unexpected `)`.", lineNumber, browser)
 				
 				actionContents += newLine + "\n"
 
 			if openCount > 0:
-				return _crashDoc("Expected ending `)` for action block.", lineNumber)
+				return _crashDoc("Expected ending `)` for action block.", lineNumber, browser)
 			elif openCount < 0:
-				return _crashDoc("Unexpected `)`.", lineNumber)
+				return _crashDoc("Unexpected `)`.", lineNumber, browser)
 			
 			actionContents = actionContents[:actionContents.rfind(")")]
 
@@ -312,7 +312,7 @@ def term2doc(contents, browser):
 
 			res.actions.append(Action(actionName, actionContents))
 		elif len(command) > 0:
-			return _crashDoc("Could not interpret line format.", lineNumber)
+			return _crashDoc("Could not interpret line format.", lineNumber, browser)
 	return res
 
 def digestDeclaration(line: str) -> tuple:
