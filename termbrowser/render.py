@@ -17,7 +17,7 @@ class OutputStyle:
 		self.start = start
 		self.style = style
 
-def renderDocument(document: Document, width: int, height: int):
+def renderDocument(document: Document, width: int, height: int, scroll: int):
 	res = clearScreen(width, height)
 	styles: List[OutputStyle] = [
 		OutputStyle(Vec(0, 0), "normal")
@@ -26,7 +26,7 @@ def renderDocument(document: Document, width: int, height: int):
 	cursor = Vec(0, 0)
 
 	for element in document.elements:
-		writeSize = renderElement(element, cursor.x, cursor.y, width, height, res, styles, None)
+		writeSize = renderElement(element, cursor.x, cursor.y - scroll, width, height, res, styles, None)
 		cursor.y += writeSize.y
 
 	# combine rows
@@ -148,7 +148,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			rowTextLen = len(rowText)
 			renderY = y + rowIndex
 
-			if len(res) > renderY:
+			if renderY < len(res) and renderY >= 0:
 				if textStyle != None and textStyle.startswith(allStyles):
 					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
 					styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
@@ -184,7 +184,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			rowTextLen = len(rowText)
 			renderY = y + rowIndex
 			
-			if len(res) > renderY:
+			if renderY < len(res) and renderY >= 0:
 				if textStyle != None and textStyle.startswith(allStyles):
 					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
 					styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
@@ -218,11 +218,16 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
 		writeSize = Vec(toRenderLength, 3)
 		startPos = x + alignOffset + 1
-		if len(res) > y + 1:
-			newRow = res[y + 1][0:startPos]
+		renderY = y + 1
+		if renderY < len(res) and renderY >= 0:
+			newRow = res[renderY][0:startPos]
 			newRow += toRender
-			newRow += res[y + 1][startPos + toRenderLength:]
-			res[y + 1] = newRow
+			newRow += res[renderY][startPos + toRenderLength:]
+			res[renderY] = newRow
+
+	elif element.type == "br":
+		writeSize = Vec(1, 1)
+	
 	return writeSize
 
 def getLinkText(element):
@@ -292,63 +297,66 @@ def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 		)
 
 		return res
+	elif element.type == "br":
+		return Vec(1, 1)
 	return None
 
 def renderBorder(type: str, pos: Vec, size: Vec, res: list):
 	screenSize = Vec(len(res[0]), len(res))
 	borderCodes = getBorderCodes(type)
-
-	# first row
-	firstRow = ""
+	
+	# any of border visible
 	if pos.y >= len(res):
-			return
+		return
 	
-	# margin
-	firstRow += res[pos.y][0:pos.x]
-	
-	# top left corner
-	firstRow += borderCodes["top-left"]
-	# top
-	firstRow += borderCodes["top"] * size.x
-	# top right corner
-	firstRow += borderCodes["top-right"]
+	# first row
+	if pos.y >= 0:
+		firstRow = ""
+		
+		# margin
+		firstRow += res[pos.y][0:pos.x]
+		
+		# top left corner
+		firstRow += borderCodes["top-left"]
+		# top
+		firstRow += borderCodes["top"] * size.x
+		# top right corner
+		firstRow += borderCodes["top-right"]
 
-	firstRow += res[pos.y][pos.x + 1 + size.x + 1:screenSize.x]
+		firstRow += res[pos.y][pos.x + 1 + size.x + 1:screenSize.x]
 
-	# establish first row
-	res[pos.y] = firstRow if len(firstRow) <= screenSize.x else firstRow[:screenSize.x]
+		# establish first row
+		res[pos.y] = firstRow if len(firstRow) <= screenSize.x else firstRow[:screenSize.x]
 
 	# middle rows
 	for y in range(size.y):
-		if pos.y + 1 + y >= len(res):
-			break
-		
-		newRow = res[pos.y + 1 + y][0:pos.x]
-		newRow += borderCodes["left"]
-		newRow += res[pos.y + 1 + y][pos.x + 1:pos.x + 1 + size.x]
-		newRow += borderCodes["right"]
-		newRow += res[pos.y + 1 + y][pos.x + 1 + size.x + 1:screenSize.x]
-		res[pos.y + 1 + y] = newRow if len(newRow) <= screenSize.x else newRow[:screenSize.x]
+		borderContentY = pos.y + 1 + y
+		if borderContentY < len(res) and borderContentY >= 0:
+			newRow = res[borderContentY][0:pos.x]
+			newRow += borderCodes["left"]
+			newRow += res[borderContentY][pos.x + 1:pos.x + 1 + size.x]
+			newRow += borderCodes["right"]
+			newRow += res[borderContentY][pos.x + 1 + size.x + 1:screenSize.x]
+			res[borderContentY] = newRow if len(newRow) <= screenSize.x else newRow[:screenSize.x]
 
 	# last row
-	lastRow = ""
-	if pos.y + size.y + 1 >= len(res):
-			return
+	lastBorderContentY = pos.y + size.y + 1
+	if lastBorderContentY < len(res) and lastBorderContentY >= 0:
+		lastRow = ""
+		# margin
+		lastRow += res[lastBorderContentY][0:pos.x]
+		
+		# bottom left corner
+		lastRow += borderCodes["bottom-left"]
+		# bottom
+		lastRow += borderCodes["bottom"] * size.x
+		# bottom right corner
+		lastRow += borderCodes["bottom-right"]
 
-	# margin
-	lastRow += res[pos.y + size.y + 1][0:pos.x]
-	
-	# bottom left corner
-	lastRow += borderCodes["bottom-left"]
-	# bottom
-	lastRow += borderCodes["bottom"] * size.x
-	# bottom right corner
-	lastRow += borderCodes["bottom-right"]
-
-	lastRow += res[pos.y + size.y + 1][pos.x + 1 + size.x + 1:screenSize.x]
-	
-	# establish last row
-	res[pos.y + size.y + 1] = lastRow if len(lastRow) <= screenSize.x else lastRow[:screenSize.x]
+		lastRow += res[lastBorderContentY][pos.x + 1 + size.x + 1:screenSize.x]
+		
+		# establish last row
+		res[lastBorderContentY] = lastRow if len(lastRow) <= screenSize.x else lastRow[:screenSize.x]
 
 def getDefinedSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	res = Vec(-1, -1)

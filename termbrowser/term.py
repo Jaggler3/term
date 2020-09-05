@@ -28,6 +28,7 @@ browser: Browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
 user_input = None
 user_input_thread_handle = None
 cursor_index: int = -1
+scroll: int = 0
 
 paste_mode: bool = False
 
@@ -68,7 +69,7 @@ def lifecycle():
 		
 
 def user_input_thread():
-	global window, user_input, cursor_index
+	global window, user_input, cursor_index, scroll
 	while True:
 		user_input = window.get_input()
 		linkIndex = browser.document.find_link(user_input)
@@ -140,6 +141,10 @@ def user_input_thread():
 			browser.document.unfocus()
 			browser.document.focus = -2
 			cursor_index = len(browser.URL)
+		if user_input == 259: # up arrow
+			scroll -= 1 if scroll > 0 else 0
+		elif user_input == 258: # down arrow
+			scroll += 1
 		elif linkIndex != -1:
 			exiting = browser.open_link(browser.document.links[linkIndex].URL)
 
@@ -174,7 +179,7 @@ def render():
 	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE)
 	
 	# Document
-	(output, styles) = renderDocument(browser.document, window.WIDTH, window.HEIGHT)
+	(output, styles) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
 	output = restrict_len(
 		remove_spacing(output),
 		window.WIDTH * (window.HEIGHT - 1) - 1 # remove last line to account for URL bar, remove last character to stop scroll

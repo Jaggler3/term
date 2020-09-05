@@ -173,7 +173,8 @@ elementTypes = [
 	"cont",
 	"text",
 	"link",
-	"input"
+	"input",
+	"br"
 ]
 
 validFormats = [
@@ -240,7 +241,8 @@ def term2doc(contents, browser):
 			if etype == "input":
 				res.hasInputs = True
 			
-			elementQueue.append(newElement)
+			if etype != "br": # br does not have an ending tag and cannot have chilren
+				elementQueue.append(newElement)
 			
 		elif command.startswith("end"):
 			if top == None:

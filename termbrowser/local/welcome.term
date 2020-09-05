@@ -26,17 +26,15 @@ cont
 			-url: https://term-search.herokuapp.com/
 			-style: underline
 		end
-		cont
-			-height: 2
-		end
+		br
+		br
 		link:Open settings
 			-key: 2
 			-url: term://settings
 			-style: underline
 		end
-		cont
-			-height: 2
-		end
+		br
+		br
 		link:Exit Term
 			-key: 3
 			-url: term://exit
