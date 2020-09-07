@@ -11,6 +11,7 @@ cont
 		-align: center
 	end
 end
+
 cont
 	-height: 10pc
 end
@@ -52,7 +53,7 @@ cont
 	end
 	text:Press Alt + K to open the debugger. (Option + K on Mac)
 	end
-	text:Pres Alt + Q to paste (Option + Q on Mac).
+	text:Pres Alt + Q to paste. (Option + Q on Mac)
 		-style: underline
 	end
 end

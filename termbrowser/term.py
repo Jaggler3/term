@@ -16,7 +16,7 @@ import pyperclip
 
 from .adom import Document, Element
 from .browser import *
-from .render import *
+from .rendering.render import *
 from .util import *
 from .window import Window
 from .pieces import get_pieces
@@ -32,7 +32,7 @@ scroll: int = 0
 
 paste_mode: bool = False
 
-fps: int = 20 # 20 frames per second
+fps: int = 60 # 20 frames per second
 
 def setup(screen):
 	window = Window(screen)

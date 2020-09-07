@@ -1,6 +1,8 @@
-from .adom import Document, Element
-from .vector import *
-from .util import *
+from ..adom import Document, Element
+from ..vector import *
+from ..util import *
+from .borders import getBorderCodes
+from .style import OutputStyle
 
 from textwrap import TextWrapper
 
@@ -12,21 +14,30 @@ text_wrapper = TextWrapper(
 	#drop_whitespace=True # try this out??
 )
 
-class OutputStyle:
-	def __init__(self, start: Vec, style: str):
-		self.start = start
-		self.style = style
+# all possible text styling options
+TextStyles = (
+	"bold",
+	"underline"
+)
+
+DEFAULT_INPUT_WIDTH = 15
 
 def renderDocument(document: Document, width: int, height: int, scroll: int):
+	# initialize frame with cleared screen
 	res = clearScreen(width, height)
+
+	# initialize frame with single normal style
 	styles: List[OutputStyle] = [
 		OutputStyle(Vec(0, 0), "normal")
 	]
 
+	# cursor starts at the top left corner
 	cursor = Vec(0, 0)
 
+	# recursively render all elements to the screen
 	for element in document.elements:
 		writeSize = renderElement(element, cursor.x, cursor.y - scroll, width, height, res, styles, None)
+		# move the cursor down using the size of the rendered element
 		cursor.y += writeSize.y
 
 	# combine rows
@@ -34,12 +45,13 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
 	for row in res:
 		out += row
 
-	# style Vec -> indices
+	# style start changes from Vec(x, y) -> out[i]
 	for style in styles:
 		style.start = style.start.x + (style.start.y * width)
 	
 	return (out, styles)
 
+# row list filled with empty
 def clearScreen(width: int, height: int) -> list:
 	return [" " * width] * height
 
@@ -55,14 +67,9 @@ def renderDebugger(text: str, width: int, height: int) -> str:
 		out += " " * width
 	
 	return out
-	
-
-allStyles = (
-	"bold",
-	"underline"
-)
 
 def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res: list, styles: list, parentSize: Vec):
+	# the write size is used to determine how far away the next element in queue should be placed
 	writeSize = Vec(0, 0)
 
 	if element.type == "cont":
@@ -70,10 +77,9 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		direction = getDirection(element)
 		borderType = element.getAttribute("border")
 		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
-
 		initialOffset = Vec(padding['left'], padding['top'])
-
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
+
 		hasDefWidth = defSize.x != -1
 		hasDefHeight = defSize.y != -1
 
@@ -126,36 +132,40 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		else:
 			writeSize = contSize
 
-	elif element.type == "text" and element.value != "":
-		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
-		alignOffset = getAlignOffset(element, outerSize)
-		maxWidth = outerSize.x
-		widthAttr = element.getAttribute("width")
-		renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
+	elif element.type == "text":
+		# has value
+		if element.value != "":
+			outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
+			alignOffset = getAlignOffset(element, outerSize)
+			maxWidth = outerSize.x
+			widthAttr = element.getAttribute("width")
+			renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
 
-		wrapped_text_size = getWrapAndSize(element.value, renderWidth)
-		wrapped_text = wrapped_text_size["text"]
-		wrapped_size = wrapped_text_size["size"]
+			wrapped_text_size = getWrapAndSize(element.value, renderWidth)
+			wrapped_text = wrapped_text_size["text"]
+			wrapped_size = wrapped_text_size["size"]
 
-		writeSize = wrapped_size
-		startPos = x + alignOffset
+			writeSize = wrapped_size
+			startPos = x + alignOffset
 
-		textStyle = element.getAttribute("style")
-		
-		renderRows = wrapped_text.splitlines()
-		for rowIndex in range(len(renderRows)):
-			rowText = renderRows[rowIndex]
-			rowTextLen = len(rowText)
-			renderY = y + rowIndex
+			textStyle = element.getAttribute("style")
+			
+			renderRows = wrapped_text.splitlines()
+			for rowIndex in range(len(renderRows)):
+				rowText = renderRows[rowIndex]
+				rowTextLen = len(rowText)
+				renderY = y + rowIndex
 
-			if renderY < len(res) and renderY >= 0:
-				if textStyle != None and textStyle.startswith(allStyles):
-					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
-					styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
-				newRow = res[renderY][0:startPos]
-				newRow += rowText
-				newRow += res[renderY][startPos + rowTextLen:]
-				res[renderY] = newRow
+				# in bounds
+				if renderY < len(res) and renderY >= 0:
+					# styled text
+					if textStyle != None and textStyle.startswith(TextStyles):
+						styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
+						styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
+					# render single line of text
+					res[renderY] = res[renderY][0:startPos] + rowText + res[renderY][startPos + rowTextLen:]
+		else:
+			writeSize = Vec(0, 1)
 		
 	elif element.type == "link":
 		toRender = getLinkText(element)
@@ -169,33 +179,29 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		widthAttr = element.getAttribute("width")
 		renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
 
-		wrapped_text_size = getWrapAndSize(toRender, renderWidth)
-		wrapped_text = wrapped_text_size["text"]
-		wrapped_size = wrapped_text_size["size"]
+		wrapped = getWrapAndSize(toRender, renderWidth)
 
-		writeSize = wrapped_size
+		writeSize = wrapped["size"]
 		startPos = x + alignOffset
 
 		textStyle = element.getAttribute("style")
 		
-		renderRows = wrapped_text.splitlines()
+		renderRows = wrapped["text"].splitlines()
 		for rowIndex in range(len(renderRows)):
 			rowText = renderRows[rowIndex]
 			rowTextLen = len(rowText)
 			renderY = y + rowIndex
 			
 			if renderY < len(res) and renderY >= 0:
-				if textStyle != None and textStyle.startswith(allStyles):
+				endPos = startPos + rowTextLen
+				if textStyle != None and textStyle.startswith(TextStyles):
 					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
-					styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
-				newRow = res[renderY][0:startPos]
-				newRow += rowText
-				newRow += res[renderY][startPos + rowTextLen:]
-				res[renderY] = newRow
+					styles.append(OutputStyle(Vec(endPos, renderY), "normal"))
+				res[renderY] = res[renderY][0:startPos] + rowText + res[renderY][endPos:]
 		
 	elif element.type == "input":
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
-		calcWidth = defSize.x if defSize.x != -1 else 15
+		calcWidth = defSize.x if defSize.x != -1 else DEFAULT_INPUT_WIDTH
 		renderCursor = "\N{FULL BLOCK}" if element.focused else ""
 		val = element.value
 		idx = element.focus_cursor_index
@@ -220,10 +226,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		startPos = x + alignOffset + 1
 		renderY = y + 1
 		if renderY < len(res) and renderY >= 0:
-			newRow = res[renderY][0:startPos]
-			newRow += toRender
-			newRow += res[renderY][startPos + toRenderLength:]
-			res[renderY] = newRow
+			res[renderY] = res[renderY][0:startPos] + toRender + res[renderY][startPos + toRenderLength:]
 
 	elif element.type == "br":
 		writeSize = Vec(1, 1)
@@ -369,7 +372,7 @@ def getDefinedSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 		res.y = parseSize(defHeight, HEIGHT)
 	return res
 
-def parseSize(size, MAX) -> int:
+def parseSize(size, MAX) -> int:	
 	if isInt(size):
 		return int(size)
 	else:
@@ -428,38 +431,3 @@ def getDirection(element: Element) -> str:
 		return "column"
 	else:
 		return dir
-
-def getBorderCodes(type: str) -> dict:
-	# defaults are for 'line'
-	res = {
-		"top-left": "\u2554",
-		"top-right": "\u2557",
-		"bottom-left": "\u255A",
-		"bottom-right": "\u255D",
-		"top": "\u2550",
-		"bottom": "\u2550",
-		"left": "\u2551",
-		"right": "\u2551",
-	}
-
-	if type == "dotted thick":
-		res["top-left"] = "\u250F"
-		res["top-right"] = "\u2513"
-		res["bottom-left"] = "\u2517"
-		res["bottom-right"] = "\u251B"
-		res["top"] = "\u2505"
-		res["bottom"] = "\u2505"
-		res["left"] = "\u2507"
-		res["right"] = "\u2507"
-
-	if type == "dotted thin":
-		res["top-left"] = "\u250C"
-		res["top-right"] = "\u2510"
-		res["bottom-left"] = "\u2514"
-		res["bottom-right"] = "\u2518"
-		res["top"] = "\u2504"
-		res["bottom"] = "\u2504"
-		res["left"] = "\u2506"
-		res["right"] = "\u2506"
-
-	return res
