@@ -65,8 +65,9 @@ A `cont` (container) is similar to a `<div>` in HTML
 To specify an element's value, use `:`
 
 ```
-text: Hello World!
+text:Hello World!
 end
+# Note any spacing after the `:` is recorded ('text: Hello World!' returns a value of ' Hello World!')
 ```
 
 A `text` element is similar to a `<p>` element in HTML
@@ -103,17 +104,18 @@ action: my-action (
 ## Scripting
 The code executed in an action block is not of any specification or language, but is evaluated through [SimpleEval](https://pypi.org/project/simpleeval/).
 
-Methods you may use:
-`visit(url: str)` Open another page by URL
+See [the scripting page](SCRIPTING.md).
 
 ## Attributes
 Attributes for `cont` include `width`, `height`, `border`, `direction`, and `padding`.
 
-Attributes for `text` include `align`, and `style`
+Attributes for `text` include `initial`, `align`, and `style`
 
 Attributes for `link` include `url`, `align`, and `style`
 
 Attributes for `input` include `submit`, `width`, `height`, and `padding`
+
+All elements accept a `name` property, which gives the actions of the page access to it's attributes and value. Accessing by `name` returns the first element in-order of the tree with that name. 
 
 ## Responsiveness
 

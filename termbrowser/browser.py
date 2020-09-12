@@ -24,6 +24,9 @@ class Browser:
 		self.document.call_document_action("start", {})
 		if self.document.hasInputs:
 			self.document.focus_next()
+			focused = self.document.get_focused_element()
+			if focused.getAttribute("autofocus") == "no":
+				self.document.unfocus()
 
 	def createEvaluator(self):
 		evaluator = simpleeval.EvalWithCompoundTypes()
@@ -45,22 +48,30 @@ class Browser:
 			return True
 
 	def var(self, name: str, value):
+		self.debug(name + ": " + value)
 		self.context[name] = value
 
 	def getvar(self, name: str):
-		return self.context[name]
+		if name in self.context:
+			return self.context[name]
+		else:
+			return "None"
 
 	def encode(self, text: str):
 		return text
 
 	def debug(self, text: str):
 		self.debugHistory += text + "\n"
+	
+	def action(self, name: str):
+		self.document.call_action(name, {})
 
 	def script_functions(self):
 		return {
 			"visit": self.open_link,
 			"getvar": self.getvar,
 			"var": self.var,
+			"action": self.action,
 			"encode": self.encode,
 			"debug": self.debug
 		}

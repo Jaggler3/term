@@ -66,7 +66,7 @@ def lifecycle():
 			curses.endwin()
 			traceback.print_exc(file=sys.stdout)
 			browser.debug(str(e))
-		
+
 
 def user_input_thread():
 	global window, user_input, cursor_index, scroll
@@ -85,10 +85,10 @@ def user_input_thread():
 		elif user_input == 9: # tab:
 			browser.document.focus_next()
 			_focused = browser.document.get_focused_element()
-			_focused.focus_cursor_index = len(_focused.value)
 		elif browser.document.focus != -1:
 			char = chr(user_input)
-			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?`~"
+			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?`~"
+			# use for debugging
 			# browser.URL += str(user_input) + char
 			if browser.document.focus == -2: # URL
 				if user_input == 226: # alt + v to enable paste
@@ -128,6 +128,9 @@ def user_input_thread():
 				elif inputChars.find(char) != -1:
 					focusedElement.value = focusedElement.value[:old_index] + str(char) + focusedElement.value[old_index:]
 					focusedElement.focus_cursor_index += 1
+					browser.document.call_element_action(focusedElement, "change", {
+						"value": focusedElement.value
+					})
 				elif user_input == 127: # backspace
 					if len(focusedElement.value) == 0 or old_index == 0:
 						continue
@@ -151,7 +154,7 @@ def user_input_thread():
 def update():
 	global window, user_input
 	if window.exiting:
-			exit(0)
+		exit(0)
 	if browser.loading:
 		cursor_index = -1
 	user_input = ""
@@ -177,7 +180,7 @@ def render():
 	window.render(render_url, curses.A_UNDERLINE)
 	# Check and Loading symbols
 	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE)
-	
+
 	# Document
 	(output, styles) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
 	output = restrict_len(
@@ -195,7 +198,7 @@ def render():
 	if browser.debugMode:
 		window.start_render(window.HEIGHT - debugHeight, 0)
 		window.render(renderDebugger(browser.debugHistory, window.WIDTH, debugHeight)[:-1], curses.A_NORMAL)
-	
+
 	# Disable Cursor
 	window.disable_cursor()
 

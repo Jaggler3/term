@@ -71,6 +71,8 @@ class Document:
 
 	def focus_next(self):
 		self.focus = self._search_focus(self.focus)
+		focused = self.get_focused_element()
+		focused.focus_cursor_index = len(focused.value)
 
 	def get_focused_element(self):
 		return self.get_focus_list()[self.focus]
@@ -229,6 +231,8 @@ def term2doc(contents, browser):
 					return _crashDoc("Could not interpret attribute.", lineNumber, browser)
 				else:
 					top.setAttribute(result["name"], result["value"])
+					if result["name"] == "initial" and top.type == "input":
+						top.value = result["value"]
 			
 		elif command.startswith(tuple(elementTypes)):
 			etype, evalue = digestDeclaration(command)

@@ -22,6 +22,7 @@ TextStyles = (
 
 DEFAULT_INPUT_WIDTH = 15
 
+# document --(render)--> list of rows (strings)
 def renderDocument(document: Document, width: int, height: int, scroll: int):
 	# initialize frame with cleared screen
 	res = clearScreen(width, height)
@@ -48,7 +49,7 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
 	# style start changes from Vec(x, y) -> out[i]
 	for style in styles:
 		style.start = style.start.x + (style.start.y * width)
-	
+
 	return (out, styles)
 
 # row list filled with empty
@@ -62,10 +63,10 @@ def renderDebugger(text: str, width: int, height: int) -> str:
 	out = ""
 	for line in textlines:
 		out += restrict_len(expand_len(line, width), width)
-	
+
 	for i in range(height - len(textlines)):
 		out += " " * width
-	
+
 	return out
 
 def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res: list, styles: list, parentSize: Vec):
@@ -124,7 +125,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 				offset.x += singleSize.x
 			elif direction == "column":
 				offset.y += singleSize.y
-		
+
 		# render border
 		if borderType != None:
 			renderBorder(borderType, Vec(x, y), contSize, res)
@@ -149,7 +150,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			startPos = x + alignOffset
 
 			textStyle = element.getAttribute("style")
-			
+
 			renderRows = wrapped_text.splitlines()
 			for rowIndex in range(len(renderRows)):
 				rowText = renderRows[rowIndex]
@@ -166,11 +167,11 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 					res[renderY] = res[renderY][0:startPos] + rowText + res[renderY][startPos + rowTextLen:]
 		else:
 			writeSize = Vec(0, 1)
-		
+
 	elif element.type == "link":
 		toRender = getLinkText(element)
 		toRenderLength = len(toRender)
-		
+
 		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
 		alignOffset = getAlignOffset(element, outerSize)
 		maxWidth = WIDTH
@@ -185,20 +186,20 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		startPos = x + alignOffset
 
 		textStyle = element.getAttribute("style")
-		
+
 		renderRows = wrapped["text"].splitlines()
 		for rowIndex in range(len(renderRows)):
 			rowText = renderRows[rowIndex]
 			rowTextLen = len(rowText)
 			renderY = y + rowIndex
-			
+
 			if renderY < len(res) and renderY >= 0:
 				endPos = startPos + rowTextLen
 				if textStyle != None and textStyle.startswith(TextStyles):
 					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
 					styles.append(OutputStyle(Vec(endPos, renderY), "normal"))
 				res[renderY] = res[renderY][0:startPos] + rowText + res[renderY][endPos:]
-		
+
 	elif element.type == "input":
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
 		calcWidth = defSize.x if defSize.x != -1 else DEFAULT_INPUT_WIDTH
@@ -222,7 +223,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 		borderType = "dotted thick" if element.focused else "dotted thin"
 		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
-		writeSize = Vec(toRenderLength, 3)
+		writeSize = Vec(toRenderLength + 2, 3)
 		startPos = x + alignOffset + 1
 		renderY = y + 1
 		if renderY < len(res) and renderY >= 0:
@@ -230,11 +231,11 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 	elif element.type == "br":
 		writeSize = Vec(1, 1)
-	
+
 	return writeSize
 
 def getLinkText(element):
-	return "[" + element.getAttribute("key") + "] " + element.value 
+	return "[" + element.getAttribute("key") + "] " + element.value
 
 def getWrapAndSize(text: str, maxWidth: int):
 	if maxWidth == None:
@@ -253,7 +254,7 @@ def getAlignOffset(element: Element, parentSize: Vec) -> int:
 	val = element.value
 	if element.type == "link":
 		val = getLinkText(element)
-	
+
 	align = element.getAttribute("align")
 	defWidth = getDefinedSize(element, parentSize.x, parentSize.y).x
 	wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x)
@@ -293,7 +294,7 @@ def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 			elif direction == "column":
 				childrenSize.y += singleSize.y
 				childrenSize.x = max(childrenSize.x, singleSize.x)
-		
+
 		res = Vec(
 			defSize.x if hasDefWidth else childrenSize.x + paddingSize.x,
 			defSize.y if hasDefHeight else childrenSize.y + paddingSize.y
@@ -307,18 +308,18 @@ def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 def renderBorder(type: str, pos: Vec, size: Vec, res: list):
 	screenSize = Vec(len(res[0]), len(res))
 	borderCodes = getBorderCodes(type)
-	
+
 	# any of border visible
 	if pos.y >= len(res):
 		return
-	
+
 	# first row
 	if pos.y >= 0:
 		firstRow = ""
-		
+
 		# margin
 		firstRow += res[pos.y][0:pos.x]
-		
+
 		# top left corner
 		firstRow += borderCodes["top-left"]
 		# top
@@ -348,7 +349,7 @@ def renderBorder(type: str, pos: Vec, size: Vec, res: list):
 		lastRow = ""
 		# margin
 		lastRow += res[lastBorderContentY][0:pos.x]
-		
+
 		# bottom left corner
 		lastRow += borderCodes["bottom-left"]
 		# bottom
@@ -357,7 +358,7 @@ def renderBorder(type: str, pos: Vec, size: Vec, res: list):
 		lastRow += borderCodes["bottom-right"]
 
 		lastRow += res[lastBorderContentY][pos.x + 1 + size.x + 1:screenSize.x]
-		
+
 		# establish last row
 		res[lastBorderContentY] = lastRow if len(lastRow) <= screenSize.x else lastRow[:screenSize.x]
 
@@ -372,7 +373,7 @@ def getDefinedSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 		res.y = parseSize(defHeight, HEIGHT)
 	return res
 
-def parseSize(size, MAX) -> int:	
+def parseSize(size, MAX) -> int:
 	if isInt(size):
 		return int(size)
 	else:
@@ -394,7 +395,7 @@ def getPadding(element: Element, width: int, height: int) -> dict:
 		'left': 0,
 		'right': 0
 	}
-	
+
 	padding = element.getAttribute("padding")
 	padding_top = element.getAttribute("padding-top")
 	padding_bottom = element.getAttribute("padding-bottom")
@@ -410,13 +411,13 @@ def getPadding(element: Element, width: int, height: int) -> dict:
 			'left': horiz,
 			'right': horiz
 		}
-	
+
 	if padding_top != None:
 		paddingOut['top'] += parseSize(padding_top, height)
-		
+
 	if padding_bottom != None:
 		paddingOut['bottom'] += parseSize(padding_bottom, height)
-	
+
 	if padding_left != None:
 		paddingOut['left'] += parseSize(padding_left, width)
 

@@ -19,6 +19,9 @@ action:myAction(
 `var(name, value)` assigns a value to a variable
 `getvar(name)` get a variable value
 `action(name)` Call another action as a method
+`encode(text)` Encode text to be a valid URI
+`action(name)` Call another action to be executed
+`debug(text)`  Print to the debug console (open with Alt + K)
 
 ## Events
 `action:[start]` is called once the page is loaded
