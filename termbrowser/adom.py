@@ -1,6 +1,5 @@
 from typing import List
 import simpleeval
-from urllib.parse import quote
 
 import termbrowser.browser
 

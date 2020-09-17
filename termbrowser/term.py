@@ -128,9 +128,7 @@ def user_input_thread():
 				elif inputChars.find(char) != -1:
 					focusedElement.value = focusedElement.value[:old_index] + str(char) + focusedElement.value[old_index:]
 					focusedElement.focus_cursor_index += 1
-					browser.document.call_element_action(focusedElement, "change", {
-						"value": focusedElement.value
-					})
+					browser.document.change(focusedElement)
 				elif user_input == 127: # backspace
 					if len(focusedElement.value) == 0 or old_index == 0:
 						continue
@@ -197,7 +195,8 @@ def render():
 	debugHeight = 8
 	if browser.debugMode:
 		window.start_render(window.HEIGHT - debugHeight, 0)
-		window.render(renderDebugger(browser.debugHistory, window.WIDTH, debugHeight)[:-1], curses.A_NORMAL)
+		debugged = renderDebugger(browser.debugHistory, window.WIDTH, debugHeight)[:-1]
+		window.render(debugged, curses.A_NORMAL)
 
 	# Disable Cursor
 	window.disable_cursor()

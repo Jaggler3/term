@@ -3,6 +3,7 @@ import os
 import requests as requests
 from time import sleep
 import simpleeval
+from urllib.parse import quote
 
 import termbrowser.adom
 
@@ -58,7 +59,7 @@ class Browser:
 			return "None"
 
 	def encode(self, text: str):
-		return text
+		return quote(text)
 
 	def debug(self, text: str):
 		self.debugHistory += text + "\n"

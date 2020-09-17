@@ -16,6 +16,10 @@ and start using this command:
 ```bash
 term
 ```
+or manually:
+```bash
+python3 -m termbrowser
+```
 
 Open links using their hotkeys ex. 1 for `[1] Link Name`
 
@@ -23,6 +27,9 @@ Press Escape twice to change the URL to load
 Press Tab to cycle focus of input fields
 Press Enter to submit an input field
 Press Alt(or Option) + Q to unfocus from an input field
+
+## Important Note
+Term Browser sends requests using the header `Content-Type: Term`. Your web server can distiguish that the request is coming from the Term Browser through this header.
 
 
 ## File Format
