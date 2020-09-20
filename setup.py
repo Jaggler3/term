@@ -18,7 +18,7 @@ URL = 'https://github.com/Jaggler3/term'
 EMAIL = 'martin.protostar@gmail.com'
 AUTHOR = 'Martin Darazs'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 
 # What packages are required for this module to be executed?
 REQUIRED = [

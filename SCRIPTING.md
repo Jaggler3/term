@@ -10,7 +10,7 @@ An example action
 # Comments must remain outside of an action block
 action:myAction(
 	var("name", "martin"),
-	visit("www.mysite.com/name=" + getvar("name"))
+	visit("www.mysite.com/?name=" + getvar("name"))
 )
 ```
 

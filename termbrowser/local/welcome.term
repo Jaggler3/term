@@ -5,7 +5,7 @@ cont
 	-padding-top: 3
 	-padding-bottom: 3
 	-width: 100pc
-	text:Term v0.1.6
+	text:Term v0.1.7
 		-width: 50pc
 		-style: bold
 		-align: center
@@ -24,7 +24,7 @@ cont
 		-padding-bottom: 3
 		link:Search the web
 			-key: 1
-			-url: https://term-search.herokuapp.com/
+			-url: https://termnet-search.herokuapp.com/
 			-style: underline
 		end
 		br
