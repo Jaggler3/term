@@ -25,11 +25,6 @@ REQUIRED = [
 	'requests', 'simpleeval', 'pyperclip'
 ]
 
-# What packages are optional?
-EXTRAS = {
-	# 'fancy feature': ['django'],
-}
-
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------
 # Except, perhaps the License and Trove Classifiers!
