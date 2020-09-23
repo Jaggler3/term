@@ -25,6 +25,8 @@ REQUIRED = [
 	'requests', 'simpleeval', 'pyperclip'
 ]
 
+EXTRAS = { }
+
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------
 # Except, perhaps the License and Trove Classifiers!
