@@ -1,0 +1,56 @@
+@termtype:m100
+
+# top bar
+cont
+	-direction:row
+	cont
+		-width: 20pc
+		-border: thin
+		link:Home
+			-align: center
+			-key: 1
+			-url: http://link
+		end
+	end
+	cont
+		-width: 20pc
+		-border: thin
+		link:My Work
+			-align: center
+			-key: 2
+			-url: http://link
+		end
+	end
+	cont
+		-width: 40pc
+	end
+	cont
+		-width: 20pc
+		-border: thin
+		link:Contact
+			-align: center
+			-key: 3
+			-url: http://link
+		end
+	end
+end
+cont
+	-height: 3
+end
+cont
+	-width: 100pc
+	text:Ibrahim Salman
+		-style: bold
+		-align: center
+	end
+end
+cont
+	-width: 100pc
+	-padding: 3
+	text:Welcome to my Term website. Here you can find lots of things about me and my work.
+	end
+end
+
+action:[start](
+	debug("Hello debugger!"),
+)
