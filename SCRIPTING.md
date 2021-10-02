@@ -14,6 +14,15 @@ action:myAction(
 )
 ```
 
+## Operations
+As scripts are evaluated through [SimpleEval](https://pypi.org/project/simpleeval/), combining strings and performing mathematical operations are possible.
+```
+action:myAction(
+	var("my_name", "martin" + " " + "darazs"),
+	var("my_number", 1 + 2 + 3)
+)
+```
+
 ## Built-In Functions
 `visit` opens a URL
 `var(name, value)` assigns a value to a variable

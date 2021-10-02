@@ -1,9 +1,8 @@
-# Term - terminal web browser
+# Term - terminal internet browser
 
 ![term start](https://user-images.githubusercontent.com/11529502/90342254-a60aae00-dfd4-11ea-81ac-064457d04a82.gif)
 
-Term is terminal-based web browser that only accepts files using the Term File Format. This browser is responsive to youtr terminal's sizing and is developer-focused. This browser will not render HTML or execute JavaScript. It does, however, implement a similar DOM model, and styling attributes are similar to CSS.
-
+Term is a terminal-based interactive internet browser that works with a lightweight file format. Term-sites can offer information and interactivity with minimal download sizes. The simple format and set of features allows for wide compatibility to devices that can show a terminal and run Python.
 ![term usage](https://user-images.githubusercontent.com/11529502/90342257-ab67f880-dfd4-11ea-9e8d-f34f7ba5b74e.gif)
 
 ## Using the browser
@@ -29,11 +28,11 @@ Press Enter to submit an input field
 Press Alt(or Option) + Q to unfocus from an input field
 
 ## Important Note
-Term Browser sends requests using the header `Content-Type: Term`. Your web server can distiguish that the request is coming from the Term Browser through this header.
+Term Browser sends requests using the header `Content-Type: Term`. Your server can distiguish that the request is coming from the Term Browser through this header.
 
 
 ## File Format
-Term File Format files are read line by line. The first line of any term file declares the term version to be used. Ex:
+Term files are read line by line. The first line of any term file declares the term version to be used. Ex:
 
 ```
 @termtype:m100
@@ -47,7 +46,7 @@ The `#` character at the start of a line is used for commenting
 
 ### Elements
 
-There are currently 5 element types. `cont`, `text`, `link`, `input`, and `action`
+There are 5 element types. `cont`, `text`, `link`, `input`, and `action`
 
 Declare an element like so
 
@@ -74,10 +73,8 @@ To specify an element's value, use `:`
 ```
 text:Hello World!
 end
-# Note any spacing after the `:` is recorded ('text: Hello World!' returns a value of ' Hello World!')
+# Note any spacing after the `:` is recorded ('text: Hello World!' returns a value of ' Hello World!'). Tabs, spaces, and empty lines separating elements are disregarded and are not required to follow a specific pattern.
 ```
-
-A `text` element is similar to a `<p>` element in HTML
 
 Input fields can be created like so:
 
