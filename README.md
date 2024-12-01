@@ -20,25 +20,25 @@ or manually:
 python3 -m termbrowser
 ```
 
-Open links using their hotkeys ex. 1 for `[1] Link Name`
+Open links using their hotkeys ex. 1 for `[1] Link Name`.
 
-Press Escape twice to change the URL to load
-Press Tab to cycle focus of input fields
-Press Enter to submit an input field
-Press Alt(or Option) + Q to unfocus from an input field
+Press Escape twice to change the URL to load.
+Press Tab to cycle focus of input fields.
+Press Enter to submit an input field.
+Press Alt(or Option) + Q to unfocus from an input field.
 
 ## Important Note
 Term Browser sends requests using the header `Content-Type: Term`. Your server can distiguish that the request is coming from the Term Browser through this header.
 
 
 ## File Format
-Term files are read line by line. The first line of any term file declares the term version to be used. Ex:
+Term files are read line by line. The first line of any term file declares the term version to be used:
 
 ```
 @termtype:m100
 ```
 
-The `#` character at the start of a line is used for commenting
+The `#` character at the start of a line is used for commenting:
 
 ```
 # this is a comment!
@@ -48,7 +48,7 @@ The `#` character at the start of a line is used for commenting
 
 There are 5 element types. `cont`, `text`, `link`, `input`, and `action`
 
-Declare an element like so
+Declare an element like so:
 
 ```
 cont
@@ -56,7 +56,7 @@ cont
 end
 ```
 
-Inside of that element, you can place attributes
+Inside of that element, you can place attributes.
 
 ```
 cont
@@ -66,9 +66,9 @@ cont
 end
 ```
 
-A `cont` (container) is similar to a `<div>` in HTML
+A `cont` (container) is similar to a `<div>` in HTML.
 
-To specify an element's value, use `:`
+To specify an element's value, use `:` like so:
 
 ```
 text:Hello World!
@@ -85,9 +85,9 @@ end
 ```
 
 ## Actions
-Actions are blocks of code that you can write in a term file to provide interactivity to it's elements
+Actions are blocks of code that you can write in a term file to provide interactivity to it's elements.
 
-To declare an action, use
+To declare an action, use:
 ```
 action: my-action (
 
@@ -113,11 +113,11 @@ See [the scripting page](SCRIPTING.md).
 ## Attributes
 Attributes for `cont` include `width`, `height`, `border`, `direction`, and `padding`.
 
-Attributes for `text` include `initial`, `align`, and `style`
+Attributes for `text` include `initial`, `align`, and `style`.
 
-Attributes for `link` include `url`, `align`, and `style`
+Attributes for `link` include `url`, `align`, and `style`.
 
-Attributes for `input` include `submit`, `width`, `height`, and `padding`
+Attributes for `input` include `submit`, `width`, `height`, and `padding`.
 
 All elements accept a `name` property, which gives the actions of the page access to it's attributes and value. Accessing by `name` returns the first element in-order of the tree with that name. 
 
