@@ -84,7 +84,7 @@ def user_input_thread():
 			browser.debugMode = not browser.debugMode
 		elif user_input == 9: # tab:
 			browser.document.focus_next()
-			_focused = browser.document.get_focused_element()
+			# _focused = browser.document.get_focused_element()
 		elif browser.document.focus != -1:
 			char = chr(user_input)
 			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?`~"

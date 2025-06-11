@@ -3,6 +3,8 @@ import simpleeval
 
 import termbrowser.browser
 
+URL_BAR_INDEX = -2
+
 class Action:
 	def __init__(self, name, contents):
 		self.name = name
@@ -69,12 +71,30 @@ class Document:
 		return self
 
 	def focus_next(self):
-		self.focus = self._search_focus(self.focus)
-		focused = self.get_focused_element()
-		focused.focus_cursor_index = len(focused.value)
+		all: List[Element] = get_all_elements(self.elements)
+		focusable = ("input",)
+		focusList: List[Element] = []
+		for element in all:
+			element.focused = False
+			if element.type.startswith(focusable):
+				focusList.append(element)
+		if len(focusList) == 0:
+			self.focus = URL_BAR_INDEX # no focusable elements, focus on url bar
+			return
+		
+		index = self.focus + 1
+		index = index if index < len(focusList) else 0
+		if len(focusList) > 0:
+			focusList[index].focused = True
+			self.focus = index
+
+		# focused = self.get_focused_element()
+		# focused.focus_cursor_index = len(focused.value)
 
 	def get_focused_element(self):
-		return self.get_focus_list()[self.focus]
+		if self.focus > -1:	
+			return self.get_focus_list()[self.focus]
+		return None
 
 	def unfocus(self):
 		focus_list: List[Element] = get_all_elements(self.elements)
@@ -91,21 +111,9 @@ class Document:
 				focusList.append(element)
 		return focusList
 	
-	def _search_focus(self, start: int):
-		all: List[Element] = get_all_elements(self.elements)
-		focusable = ("input",)
-		focusList: List[Element] = []
-		for element in all:
-			element.focused = False
-			if element.type.startswith(focusable):
-				focusList.append(element)
-		index = start + 1
-		index = index if index < len(focusList) else 0
-		if len(focusList) > 0:
-			focusList[index].focused = True
-			return index
-		else:
-			return -1
+	def _focus_on_url_bar(self):
+		self.unfocus()
+		self.focus = URL_BAR_INDEX
 
 	def add_link(self, key: str, URL: str):
 		self.links.append(DocumentLink(ord(key), URL))

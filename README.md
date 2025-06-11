@@ -20,6 +20,12 @@ or manually:
 python3 -m termbrowser
 ```
 
+## Development
+Install dependencies
+```bash
+pip3 install -r requirements.txt
+```
+
 Open links using their hotkeys ex. 1 for `[1] Link Name`.
 
 Press Escape twice to change the URL to load.

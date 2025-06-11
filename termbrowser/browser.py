@@ -111,9 +111,8 @@ def loadFromURL(URL: str, browser: Browser):
 
 def makeRequest(browser: Browser, url: str):
 	try:
-		page = requests.get(url, headers={"content-type": "term"}).text
+		page = requests.get(url, headers={"Content-Type": "Term"}).text
 		return termbrowser.adom.term2doc(page, browser)
 	except Exception as e:
 		browser.debug(str(e))
 		return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
-	return termbrowser.adom.Document(browser).with_message("Could not load URL.")

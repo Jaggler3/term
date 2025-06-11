@@ -24,7 +24,7 @@ cont
 		-padding-bottom: 3
 		link:Search the web
 			-key: 1
-			-url: https://termnet-search.herokuapp.com/
+			-url: http://localhost:3000
 			-style: underline
 		end
 		br
