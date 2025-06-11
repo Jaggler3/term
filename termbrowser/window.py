@@ -36,10 +36,11 @@ class Window:
 		return res
 	def start_render(self, y: int, x: 0):
 		self.screen.move(y, x)
-	def render(self, string: str, option, partial_backgrounds: list):
+	def render(self, string: str, option, partial_backgrounds: list, partial_foregrounds: list):
 		try:
 			for i in range(len(string)):
-				self.screen.addstr(string[i], curses.color_pair(partial_backgrounds[i]) | option)
+				pair = partial_backgrounds[i] * 10 + partial_foregrounds[i]
+				self.screen.addstr(string[i], curses.color_pair(pair) | option)
 		except Exception as e:
 			# write to a log file
 			with open("render.log", "a") as f:

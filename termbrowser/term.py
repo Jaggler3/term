@@ -22,6 +22,7 @@ from .window import Window
 from .pieces import get_pieces
 
 window: Window = Window(curses.initscr())
+curses.start_color()
 
 browser: Browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
 
@@ -35,11 +36,25 @@ paste_mode: bool = False
 
 fps: int = 60 # 20 frames per second
 
+colormap = {
+	1: curses.COLOR_WHITE,
+	2: curses.COLOR_BLACK,
+	3: curses.COLOR_BLUE,
+	4: curses.COLOR_RED,
+	5: curses.COLOR_GREEN,
+	6: curses.COLOR_YELLOW,
+	7: curses.COLOR_MAGENTA,
+	8: curses.COLOR_CYAN,
+}
+
 def setup(screen):
-	curses.start_color()
-	curses.use_default_colors()
-	curses.init_pair(1, -1, curses.COLOR_WHITE)
-	curses.init_pair(2, -1, curses.COLOR_BLACK)
+	# loop through all colors and create a pair for each
+	for background in range(1, 9):
+		for foreground in range(1, 9):
+			# key is `{background}{foreground}` so blue/red would be 34
+			key = background * 10 + foreground
+			curses.init_pair(key, colormap[foreground], colormap[background])
+
 	curses.set_escdelay(25)  # Reduce ESC delay to 25ms
 	window = Window(screen)
 	lifecycle()
@@ -87,10 +102,9 @@ def text_input_thread():
 
 def special_keys_input_thread():
 	global window, user_input, cursor_index, scroll
+	browser.debugHistory += f"Special Keys Input: {curses.COLOR_PAIRS} \n"
 	while True:
 		user_input = window.get_input()
-		browser.debugHistory += f"Special Keys Input: {user_input} \n"
-		browser.debugHistory += f"Focus: {browser.document.focus} \n"
 
 		if user_input == ord("`") and browser.document.focus == -1:
 			window.exiting = True
@@ -190,30 +204,34 @@ def render():
 		),
 		render_url_length
 	)
-	window.render(render_url, curses.A_UNDERLINE, [2] * len(render_url))
+	window.render(render_url, curses.A_UNDERLINE, [2] * len(render_url), [1] * len(render_url))
 	# Check and Loading symbols
-	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE, [1])
+	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE, [1] * 2, [2] * 2)
 
 	# Document
-	(output, styles, backgrounds) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
+	(output, styles, backgrounds, foregrounds) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
+
 	backgrounds_flattened = [item for sublist in backgrounds for item in sublist]
+	foregrounds_flattened = [item for sublist in foregrounds for item in sublist]
 	output = restrict_len(
 		remove_spacing(output),
 		window.WIDTH * (window.HEIGHT - 1) - 1 # remove last line to account for URL bar, remove last character to stop scroll
 	)
+
 	render_pieces = get_pieces(styles, len(output))
 	window.start_render(1, 0)
 	for piece in render_pieces:
 		(startPos, endPos, col) = piece
 		partial_backgrounds = backgrounds_flattened[startPos:endPos]
-		window.render(output[startPos:endPos], col, partial_backgrounds)
+		partial_foregrounds = foregrounds_flattened[startPos:endPos]
+		window.render(output[startPos:endPos], col, partial_backgrounds, partial_foregrounds)
 
 	# Debugger
 	debugHeight = 8
 	if browser.debugMode:
 		window.start_render(window.HEIGHT - debugHeight, 0)
 		debugged = renderDebugger(browser.debugHistory, window.WIDTH, debugHeight)[:-1]
-		window.render(debugged, curses.A_NORMAL, [2] * len(debugged))
+		window.render(debugged, curses.A_NORMAL, [2] * len(debugged), [1] * len(debugged))
 
 	# Disable Cursor
 	window.disable_cursor()

@@ -1,4 +1,6 @@
 from typing import List
+
+from ..adom.constants import COLORS_PAIRS_REVERSE
 from ..adom import Document, Element
 from ..vector import *
 from ..util import *
@@ -43,14 +45,17 @@ COLORS_PAIRS = {
 }
 
 class RenderOutput:
-	def __init__(self, rows: list, backgrounds: list):
+	def __init__(self, rows: list, backgrounds: list, foregrounds: list):
 		self.rows = rows
 		self.backgrounds = backgrounds
+		self.foregrounds = foregrounds
 
 # document --(render)--> list of rows (strings)
 def renderDocument(document: Document, width: int, height: int, scroll: int):
 	# initialize frame with cleared screen
-	res = clearScreen(width, height, document.background)
+	background_index = COLORS_PAIRS_REVERSE.get(document.background, COLORS_PAIRS_REVERSE["black"]) if document.background != None else None
+	foreground_index = COLORS_PAIRS_REVERSE.get(document.foreground, COLORS_PAIRS_REVERSE["white"]) if document.foreground != None else None
+	res = clearScreen(width, height, background_index, foreground_index)
 
 	# initialize frame with single normal style
 	styles: List[OutputStyle] = [
@@ -75,11 +80,15 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
 	for style in styles:
 		style.start = style.start.x + (style.start.y * width)
 
-	return (out, styles, res.backgrounds)
+	return (out, styles, res.backgrounds, res.foregrounds)
 
 # row list filled with empty
-def clearScreen(width: int, height: int, background: int) -> RenderOutput:
-	return RenderOutput([" " * width] * height, [[background] * width] * height)
+def clearScreen(width: int, height: int, background: int, foreground: int) -> RenderOutput:
+	return RenderOutput(
+		[" " * width] * height,
+		[[background for _ in range(width)] for _ in range(height)],
+		[[foreground for _ in range(width)] for _ in range(height)]
+	)
 
 def renderDebugger(text: str, width: int, height: int) -> str:
 	textlines = text.splitlines()
@@ -94,12 +103,26 @@ def renderDebugger(text: str, width: int, height: int) -> str:
 
 	return out
 
+def renderBackground(background_index: int, pos: Vec, size: Vec, res: RenderOutput):
+	for y in range(pos.y, pos.y + size.y):
+		for x in range(pos.x, pos.x + size.x):
+			res.backgrounds[y][x] = background_index
+
+def renderForeground(foreground_index: int, pos: Vec, size: Vec, res: RenderOutput):
+	for y in range(pos.y, pos.y + size.y):
+		for x in range(pos.x, pos.x + size.x):
+			res.foregrounds[y][x] = foreground_index
+
 def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res: RenderOutput, styles: list, parentSize: Vec):
 	# the write size is used to determine how far away the next element in queue should be placed
 	writeSize = Vec(0, 0)
 
 	if element.type == "cont":
 		padding = getPadding(element, WIDTH, HEIGHT)
+		background = element.getAttribute("background")
+		background_index = COLORS_PAIRS_REVERSE.get(background, None) if background != None else None
+		foreground = element.getAttribute("foreground")
+		foreground_index = COLORS_PAIRS_REVERSE.get(foreground, None) if foreground != None else None
 		direction = getDirection(element)
 		borderType = element.getAttribute("border")
 		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
@@ -142,6 +165,18 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		if borderType != None:
 			contSize.add(-2 if hasDefWidth else 0, -2 if hasDefHeight else 0)
 
+		# set write size
+		if borderType != None:
+			writeSize = Vec(contSize.x + 2, contSize.y + 2)
+		else:
+			writeSize = contSize
+
+		# render background
+		if background_index != None:
+			renderBackground(background_index, Vec(x, y), writeSize, res)
+		if foreground_index != None:
+			renderForeground(foreground_index, Vec(x, y), writeSize, res)
+
 		# render children with clamp, calculated pc
 		for child in element.children:
 			singleSize = renderElement(child, x + offset.x, y + offset.y, WIDTH, HEIGHT, res, styles, contSize)
@@ -154,9 +189,6 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		# render border
 		if borderType != None:
 			renderBorder(borderType, Vec(x, y), contSize, res)
-			writeSize = Vec(contSize.x + 2, contSize.y + 2)
-		else:
-			writeSize = contSize
 
 	elif element.type == "text":
 		# has value

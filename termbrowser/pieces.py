@@ -14,7 +14,7 @@ def get_pieces(styles: list, output_len: int):
 		if follow != None:
 			endPos = follow.start
 
-		col = curses.A_REVERSE
+		col = curses.A_NORMAL
 
 		if current.style == "bold":
 			col += curses.A_BOLD

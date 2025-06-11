@@ -1,5 +1,5 @@
-<term type="m100_xml" background="white">
-  <container border="thin" padding-bottom="3" width="100pc" background="blue">
+<term type="m100_xml" background="white" foreground="black">
+  <container border="thin" padding-bottom="3" width="100pc" background="black" foreground="white">
     <text width="100pc" style="bold" align="center" preserve="true">
  _____                    
 /__   \___ _ __ _ __ ___  
@@ -9,10 +9,7 @@
     </text>
   </container>
   
-  <container height="10pc">
-  </container>
-  
-  <container background="gray">
+  <container background="blue" foreground="black">
     <link align="center" width="100pc" key="1" url="http://localhost:3000" style="underline">Search the web</link>
     <br/>
     <br/>
