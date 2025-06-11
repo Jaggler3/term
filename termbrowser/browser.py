@@ -94,12 +94,12 @@ def loadFromURL(URL: str, browser: Browser):
 	if protocol == None:
 		return termbrowser.adom.Document(browser).with_message("Error: Could not determine URL protocol `{}`".format(URL))
 	elif protocol == "term://":
-		file_path = os.path.dirname(os.path.realpath(__file__)) + "/local/" + URL[len("term://"):] + ".term"
+		file_path = os.path.dirname(os.path.realpath(__file__)) + "/local/" + URL[len("term://"):] + ".xml"
 		try:
 			stream = open(file_path)
 			res = stream.read()
 			stream.close()
-			return termbrowser.adom.term2doc(res, browser)
+			return termbrowser.adom.xml2doc(res, browser)
 		except FileNotFoundError:
 			return termbrowser.adom.Document(browser).with_message("Could not load `{}`".format(file_path))
 	elif protocol == "https://" or protocol == "http://":
@@ -114,7 +114,7 @@ def loadFromURL(URL: str, browser: Browser):
 def makeRequest(browser: Browser, url: str):
 	try:
 		page = requests.get(url, headers={"Content-Type": "Term"}).text
-		return termbrowser.adom.term2doc(page, browser)
+		return termbrowser.adom.xml2doc(page, browser)
 	except Exception as e:
 		browser.debug(str(e))
 		return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))

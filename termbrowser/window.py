@@ -36,9 +36,10 @@ class Window:
 		return res
 	def start_render(self, y: int, x: 0):
 		self.screen.move(y, x)
-	def render(self, string: str, option):
+	def render(self, string: str, option, partial_backgrounds: list):
 		try:
-			self.screen.addstr(string, option)
+			for i in range(len(string)):
+				self.screen.addstr(string[i], curses.color_pair(partial_backgrounds[i]) | option)
 		except Exception as e:
 			# write to a log file
 			with open("render.log", "a") as f:

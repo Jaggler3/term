@@ -9,3 +9,19 @@ toolkit
 - termic
   - declarative like react?
     - jsx?
+
+
+ideas I like:
+
+# Common layouts as single keywords
+layout:header-body-footer
+	Welcome to Site        # auto-assigned to header
+	Main content here      # auto-assigned to body  
+	Copyright 2024         # auto-assigned to footer
+end
+
+layout:sidebar-main
+	Navigation             # auto-assigned to sidebar
+	Content goes here      # auto-assigned to main
+end
+

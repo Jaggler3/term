@@ -42,21 +42,7 @@ cont
 		-style: underline
 	end
 end
-#cont
-#	-padding-left: 33pc
-#	text:Press a hotkey ([1], [2], or [3]) to open a link.
-#	end
-#	text:Press Escape + Escape to edit the URL.
-#	end
-#	text:Press ` (the ~ key) to force exit.
-#	end
-#	text:Press Alt + K to open the debugger. (Option + K on Mac)
-#	end
-#	text:Pres Alt + Q to paste. (Option + Q on Mac)
-#		-style: underline
-#	end
-#end
-#action:[start](
-#	debug("hello"),
-#	debug("world!")
-#)
+action:[start](
+	debug("hello"),
+	debug("world!")
+)

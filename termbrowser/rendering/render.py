@@ -1,3 +1,4 @@
+from typing import List
 from ..adom import Document, Element
 from ..vector import *
 from ..util import *
@@ -14,6 +15,15 @@ text_wrapper = TextWrapper(
 	#drop_whitespace=True # try this out??
 )
 
+# Text wrapper that preserves whitespace more strictly
+text_wrapper_preserve = TextWrapper(
+	replace_whitespace=False,
+	break_long_words=True,
+	expand_tabs=True,
+	tabsize=4,
+	drop_whitespace=False
+)
+
 # all possible text styling options
 TextStyles = (
 	"bold",
@@ -22,10 +32,25 @@ TextStyles = (
 
 DEFAULT_INPUT_WIDTH = 15
 
+COLORS_PAIRS = {
+	1: "white",
+	2: "black",
+	3: "blue",
+	4: "red",
+	5: "green",
+	6: "yellow",
+	7: "magenta",
+}
+
+class RenderOutput:
+	def __init__(self, rows: list, backgrounds: list):
+		self.rows = rows
+		self.backgrounds = backgrounds
+
 # document --(render)--> list of rows (strings)
 def renderDocument(document: Document, width: int, height: int, scroll: int):
 	# initialize frame with cleared screen
-	res = clearScreen(width, height)
+	res = clearScreen(width, height, document.background)
 
 	# initialize frame with single normal style
 	styles: List[OutputStyle] = [
@@ -43,18 +68,18 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
 
 	# combine rows
 	out = ""
-	for row in res:
+	for row in res.rows:
 		out += row
 
 	# style start changes from Vec(x, y) -> out[i]
 	for style in styles:
 		style.start = style.start.x + (style.start.y * width)
 
-	return (out, styles)
+	return (out, styles, res.backgrounds)
 
 # row list filled with empty
-def clearScreen(width: int, height: int) -> list:
-	return [" " * width] * height
+def clearScreen(width: int, height: int, background: int) -> RenderOutput:
+	return RenderOutput([" " * width] * height, [[background] * width] * height)
 
 def renderDebugger(text: str, width: int, height: int) -> str:
 	textlines = text.splitlines()
@@ -69,7 +94,7 @@ def renderDebugger(text: str, width: int, height: int) -> str:
 
 	return out
 
-def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res: list, styles: list, parentSize: Vec):
+def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res: RenderOutput, styles: list, parentSize: Vec):
 	# the write size is used to determine how far away the next element in queue should be placed
 	writeSize = Vec(0, 0)
 
@@ -142,7 +167,9 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			widthAttr = element.getAttribute("width")
 			renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
 
-			wrapped_text_size = getWrapAndSize(element.value, renderWidth)
+			# Check if whitespace should be preserved
+			preserve_whitespace = element.getAttribute("preserve") == "true"
+			wrapped_text_size = getWrapAndSize(element.value, renderWidth, preserve_whitespace)
 			wrapped_text = wrapped_text_size["text"]
 			wrapped_size = wrapped_text_size["size"]
 
@@ -158,13 +185,13 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 				renderY = y + rowIndex
 
 				# in bounds
-				if renderY < len(res) and renderY >= 0:
+				if renderY < len(res.rows) and renderY >= 0:
 					# styled text
 					if textStyle != None and textStyle.startswith(TextStyles):
 						styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
 						styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
 					# render single line of text
-					res[renderY] = res[renderY][0:startPos] + rowText + res[renderY][startPos + rowTextLen:]
+					res.rows[renderY] = res.rows[renderY][0:startPos] + rowText + res.rows[renderY][startPos + rowTextLen:]
 		else:
 			writeSize = Vec(0, 1)
 
@@ -191,12 +218,12 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			rowTextLen = len(rowText)
 			renderY = y + rowIndex
 
-			if renderY < len(res) and renderY >= 0:
+			if renderY < len(res.rows) and renderY >= 0:
 				endPos = startPos + rowTextLen
 				if textStyle != None and textStyle.startswith(TextStyles):
 					styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
 					styles.append(OutputStyle(Vec(endPos, renderY), "normal"))
-				res[renderY] = res[renderY][0:startPos] + rowText + res[renderY][endPos:]
+				res.rows[renderY] = res.rows[renderY][0:startPos] + rowText + res.rows[renderY][endPos:]
 
 	elif element.type == "input":
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
@@ -220,12 +247,12 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		alignOffset = getAlignOffset(element, outerSize)
 
 		borderType = "dotted thick" if element.focused else "dotted thin"
-		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
+		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res.rows)
 		writeSize = Vec(toRenderLength + 2, 3)
 		startPos = x + alignOffset + 1
 		renderY = y + 1
-		if renderY < len(res) and renderY >= 0:
-			res[renderY] = res[renderY][0:startPos] + toRender + res[renderY][startPos + toRenderLength:]
+		if renderY < len(res.rows) and renderY >= 0:
+			res.rows[renderY] = res.rows[renderY][0:startPos] + toRender + res.rows[renderY][startPos + toRenderLength:]
 
 	elif element.type == "br":
 		writeSize = Vec(1, 1)
@@ -235,18 +262,44 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 def getLinkText(element):
 	return "[" + element.getAttribute("key") + "] " + element.value
 
-def getWrapAndSize(text: str, maxWidth: int):
+def getWrapAndSize(text: str, maxWidth: int, preserve_whitespace: bool = False):
 	if maxWidth == None:
 		return {
 			"text": text,
 			"size": Vec(len(text), 1)
 		}
-	text_wrapper.width = maxWidth
-	wrappedText = text_wrapper.fill(text)
-	return {
-		"text": wrappedText,
-		"size": Vec(maxWidth if maxWidth < len(text) else len(text), len(wrappedText.splitlines()))
-	}
+	
+	if preserve_whitespace:
+		# When preserving whitespace, don't do any automatic wrapping
+		# Just split by existing line breaks and truncate lines that are too long
+		lines = text.splitlines()
+		truncated_lines = []
+		actual_width = 0
+		
+		for line in lines:
+			if len(line) > maxWidth:
+				truncated_line = line[:maxWidth]
+				truncated_lines.append(truncated_line)
+				actual_width = max(actual_width, maxWidth)
+			else:
+				truncated_lines.append(line)
+				actual_width = max(actual_width, len(line))
+		
+		result_text = '\n'.join(truncated_lines)
+		return {
+			"text": result_text,
+			"size": Vec(actual_width, len(truncated_lines))
+		}
+	else:
+		# Use normal text wrapping
+		wrapper = text_wrapper
+		wrapper.width = maxWidth
+		wrappedText = wrapper.fill(text)
+		return {
+			"text": wrappedText,
+			"size": Vec(maxWidth if maxWidth < len(text) else len(text), len(wrappedText.splitlines()))
+		}
+	
 
 def getAlignOffset(element: Element, parentSize: Vec) -> int:
 	val = element.value
@@ -255,7 +308,8 @@ def getAlignOffset(element: Element, parentSize: Vec) -> int:
 
 	align = element.getAttribute("align")
 	defWidth = getDefinedSize(element, parentSize.x, parentSize.y).x
-	wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x)
+	preserve_whitespace = element.getAttribute("preserve") == "true" if element.type == "text" else False
+	wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x, preserve_whitespace)
 	if align == "center":
 		return round(float(parentSize.x) / 2.0) - round(float(wrapped["size"].x) / 2.0)
 	return 0
@@ -264,7 +318,8 @@ def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	if element.type == "text":
 		widthAttr = element.getAttribute("width")
 		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
-		wrapped_text_size = getWrapAndSize(element.value, renderWidth)
+		preserve_whitespace = element.getAttribute("preserve") == "true"
+		wrapped_text_size = getWrapAndSize(element.value, renderWidth, preserve_whitespace)
 		return wrapped_text_size["size"]
 	elif element.type == "link":
 		widthAttr = element.getAttribute("width")
@@ -303,12 +358,12 @@ def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 		return Vec(1, 1)
 	return None
 
-def renderBorder(type: str, pos: Vec, size: Vec, res: list):
-	screenSize = Vec(len(res[0]), len(res))
+def renderBorder(type: str, pos: Vec, size: Vec, res: RenderOutput):
+	screenSize = Vec(len(res.rows[0]), len(res.rows))
 	borderCodes = getBorderCodes(type)
 
 	# any of border visible
-	if pos.y >= len(res):
+	if pos.y >= len(res.rows):
 		return
 
 	# first row
@@ -316,7 +371,7 @@ def renderBorder(type: str, pos: Vec, size: Vec, res: list):
 		firstRow = ""
 
 		# margin
-		firstRow += res[pos.y][0:pos.x]
+		firstRow += res.rows[pos.y][0:pos.x]
 
 		# top left corner
 		firstRow += borderCodes["top-left"]
@@ -325,28 +380,28 @@ def renderBorder(type: str, pos: Vec, size: Vec, res: list):
 		# top right corner
 		firstRow += borderCodes["top-right"]
 
-		firstRow += res[pos.y][pos.x + 1 + size.x + 1:screenSize.x]
+		firstRow += res.rows[pos.y][pos.x + 1 + size.x + 1:screenSize.x]
 
 		# establish first row
-		res[pos.y] = firstRow if len(firstRow) <= screenSize.x else firstRow[:screenSize.x]
+		res.rows[pos.y] = firstRow if len(firstRow) <= screenSize.x else firstRow[:screenSize.x]
 
 	# middle rows
 	for y in range(size.y):
 		borderContentY = pos.y + 1 + y
-		if borderContentY < len(res) and borderContentY >= 0:
-			newRow = res[borderContentY][0:pos.x]
+		if borderContentY < len(res.rows) and borderContentY >= 0:
+			newRow = res.rows[borderContentY][0:pos.x]
 			newRow += borderCodes["left"]
-			newRow += res[borderContentY][pos.x + 1:pos.x + 1 + size.x]
+			newRow += res.rows[borderContentY][pos.x + 1:pos.x + 1 + size.x]
 			newRow += borderCodes["right"]
-			newRow += res[borderContentY][pos.x + 1 + size.x + 1:screenSize.x]
-			res[borderContentY] = newRow if len(newRow) <= screenSize.x else newRow[:screenSize.x]
+			newRow += res.rows[borderContentY][pos.x + 1 + size.x + 1:screenSize.x]
+			res.rows[borderContentY] = newRow if len(newRow) <= screenSize.x else newRow[:screenSize.x]
 
 	# last row
 	lastBorderContentY = pos.y + size.y + 1
-	if lastBorderContentY < len(res) and lastBorderContentY >= 0:
+	if lastBorderContentY < len(res.rows) and lastBorderContentY >= 0:
 		lastRow = ""
 		# margin
-		lastRow += res[lastBorderContentY][0:pos.x]
+		lastRow += res.rows[lastBorderContentY][0:pos.x]
 
 		# bottom left corner
 		lastRow += borderCodes["bottom-left"]
@@ -355,10 +410,10 @@ def renderBorder(type: str, pos: Vec, size: Vec, res: list):
 		# bottom right corner
 		lastRow += borderCodes["bottom-right"]
 
-		lastRow += res[lastBorderContentY][pos.x + 1 + size.x + 1:screenSize.x]
+		lastRow += res.rows[lastBorderContentY][pos.x + 1 + size.x + 1:screenSize.x]
 
 		# establish last row
-		res[lastBorderContentY] = lastRow if len(lastRow) <= screenSize.x else lastRow[:screenSize.x]
+		res.rows[lastBorderContentY] = lastRow if len(lastRow) <= screenSize.x else lastRow[:screenSize.x]
 
 def getDefinedSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	res = Vec(-1, -1)

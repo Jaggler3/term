@@ -36,6 +36,10 @@ paste_mode: bool = False
 fps: int = 60 # 20 frames per second
 
 def setup(screen):
+	curses.start_color()
+	curses.use_default_colors()
+	curses.init_pair(1, -1, curses.COLOR_WHITE)
+	curses.init_pair(2, -1, curses.COLOR_BLACK)
 	curses.set_escdelay(25)  # Reduce ESC delay to 25ms
 	window = Window(screen)
 	lifecycle()
@@ -186,12 +190,13 @@ def render():
 		),
 		render_url_length
 	)
-	window.render(render_url, curses.A_UNDERLINE)
+	window.render(render_url, curses.A_UNDERLINE, [2] * len(render_url))
 	# Check and Loading symbols
-	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE)
+	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE, [1])
 
 	# Document
-	(output, styles) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
+	(output, styles, backgrounds) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
+	backgrounds_flattened = [item for sublist in backgrounds for item in sublist]
 	output = restrict_len(
 		remove_spacing(output),
 		window.WIDTH * (window.HEIGHT - 1) - 1 # remove last line to account for URL bar, remove last character to stop scroll
@@ -200,14 +205,15 @@ def render():
 	window.start_render(1, 0)
 	for piece in render_pieces:
 		(startPos, endPos, col) = piece
-		window.render(output[startPos:endPos], col)
+		partial_backgrounds = backgrounds_flattened[startPos:endPos]
+		window.render(output[startPos:endPos], col, partial_backgrounds)
 
 	# Debugger
 	debugHeight = 8
 	if browser.debugMode:
 		window.start_render(window.HEIGHT - debugHeight, 0)
 		debugged = renderDebugger(browser.debugHistory, window.WIDTH, debugHeight)[:-1]
-		window.render(debugged, curses.A_NORMAL)
+		window.render(debugged, curses.A_NORMAL, [2] * len(debugged))
 
 	# Disable Cursor
 	window.disable_cursor()

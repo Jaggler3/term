@@ -1,0 +1,29 @@
+<term type="m100_xml" background="white">
+  <container border="thin" padding-bottom="3" width="100pc" background="blue">
+    <text width="100pc" style="bold" align="center" preserve="true">
+ _____                    
+/__   \___ _ __ _ __ ___  
+  / /\/ _ \ '__| '_ ` _ \ 
+ / / |  __/ |  | | | | | |
+ \/   \___|_|  |_| |_| |_|
+    </text>
+  </container>
+  
+  <container height="10pc">
+  </container>
+  
+  <container background="gray">
+    <link align="center" width="100pc" key="1" url="http://localhost:3000" style="underline">Search the web</link>
+    <br/>
+    <br/>
+    <link align="center" width="100pc" key="2" url="term://settings" style="underline">Open settings</link>
+    <br/>
+    <br/>
+    <link align="center" width="100pc" key="3" url="term://exit" style="underline">Exit Term</link>
+  </container>
+  
+  <action name="[start]">
+    debug("hello"),
+    debug("world!")
+  </action>
+</term>
