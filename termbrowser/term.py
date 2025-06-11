@@ -26,7 +26,8 @@ window: Window = Window(curses.initscr())
 browser: Browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
 
 user_input = None
-user_input_thread_handle = None
+special_keys_input_thread_handle = None
+text_input_thread_handle = None
 cursor_index: int = -1
 scroll: int = 0
 
@@ -35,15 +36,20 @@ paste_mode: bool = False
 fps: int = 60 # 20 frames per second
 
 def setup(screen):
+	curses.set_escdelay(25)  # Reduce ESC delay to 25ms
 	window = Window(screen)
 	lifecycle()
 
 def lifecycle():
-	global window, user_input_thread_handle
+	global window, text_input_thread_handle, special_keys_input_thread_handle
 
-	user_input_thread_handle = threading.Thread(name="daemon", target=user_input_thread, args=())
-	user_input_thread_handle.setDaemon(True)
-	user_input_thread_handle.start()
+	# text_input_thread_handle = threading.Thread(name="daemon", target=text_input_thread, args=())
+	# text_input_thread_handle.setDaemon(True)
+	# text_input_thread_handle.start()
+
+	special_keys_input_thread_handle = threading.Thread(name="daemon", target=special_keys_input_thread, args=())
+	special_keys_input_thread_handle.setDaemon(True)
+	special_keys_input_thread_handle.start()
 
 	render()
 
@@ -58,21 +64,30 @@ def lifecycle():
 			if browser.loading:
 				browser.start_load()
 			window.refresh()
-			time.sleep(1.0 / fps)
+			time.sleep(0.01)
 		except KeyboardInterrupt:
 			curses.endwin()
 			sys.exit(0)
 		except Exception as e:
-			curses.endwin()
+			# curses.endwin()
 			traceback.print_exc(file=sys.stdout)
 			browser.debug(str(e))
 
+def text_input_thread():
+	global window, user_input, cursor_index, scroll
+	while True:
+		user_input = window.get_input_text()
+		browser.debugHistory += f"Text Input: {user_input}\n"
+		time.sleep(0.01)
 
-def user_input_thread():
+
+def special_keys_input_thread():
 	global window, user_input, cursor_index, scroll
 	while True:
 		user_input = window.get_input()
-		linkIndex = browser.document.find_link(user_input)
+		browser.debugHistory += f"Special Keys Input: {user_input} \n"
+		browser.debugHistory += f"Focus: {browser.document.focus} \n"
+
 		if user_input == ord("`") and browser.document.focus == -1:
 			window.exiting = True
 			curses.nocbreak()
@@ -85,6 +100,15 @@ def user_input_thread():
 		elif user_input == 9: # tab:
 			browser.document.focus_next()
 			# _focused = browser.document.get_focused_element()
+		elif user_input == 27: # esc
+			browser.debugHistory += f"Esc: {user_input}\n"
+			browser.document.unfocus()
+			browser.document.focus = -2
+			cursor_index = len(browser.URL)
+		elif user_input == 259: # up arrow
+			scroll -= 1 if scroll > 0 else 0
+		elif user_input == 258: # down arrow
+			scroll += 1
 		elif browser.document.focus != -1:
 			char = chr(user_input)
 			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?`~"
@@ -115,12 +139,7 @@ def user_input_thread():
 				focusedElement = browser.document.get_focused_element()
 
 				old_index = focusedElement.focus_cursor_index
-
-				if user_input == 226: # alt + v to enable paste
-					toInsert = remove_spacing(pyperclip.paste())
-					focusedElement.value = focusedElement.value[:old_index] + toInsert + focusedElement.value[old_index:]
-					focusedElement.focus_cursor_index += len(toInsert)
-				elif user_input == 260: # left arrow
+				if user_input == 260: # left arrow
 					focusedElement.focus_cursor_index -= 1 if old_index != 0 else 0
 				elif user_input == 261: # right arrow
 					focusedElement.focus_cursor_index += 1 if old_index != len(focusedElement.value) else 0
@@ -138,16 +157,8 @@ def user_input_thread():
 					browser.document.submit(focusedElement)
 				elif user_input == 197: # Alt + Q
 					browser.document.unfocus()
-		elif user_input == 27: # esc
-			browser.document.unfocus()
-			browser.document.focus = -2
-			cursor_index = len(browser.URL)
-		if user_input == 259: # up arrow
-			scroll -= 1 if scroll > 0 else 0
-		elif user_input == 258: # down arrow
-			scroll += 1
-		elif linkIndex != -1:
-			exiting = browser.open_link(browser.document.links[linkIndex].URL)
+		elif browser.document.find_link(user_input) != -1:
+			window.exiting = browser.open_link(browser.document.links[browser.document.find_link(user_input)].URL)
 
 def update():
 	global window, user_input

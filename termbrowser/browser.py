@@ -14,7 +14,7 @@ class Browser:
 		self.loading = True
 		self.context = {}
 		self.debugHistory = "Debugger: Press Alt+K to close.\n"
-		self.debugMode = False
+		self.debugMode = True
 
 	def start_load(self):
 		if not self.loading:
@@ -83,6 +83,8 @@ file:// -> files on the user's computer
 http:// & https:// -> files to curl from the internet
 """
 def loadFromURL(URL: str, browser: Browser):
+	if URL == '':
+		return termbrowser.adom.Document(browser).with_message("Error: URL is empty")
 	protocol = None
 	protocols = ["term://", "http://", "https://"]
 	for p in protocols:

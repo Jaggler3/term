@@ -78,15 +78,22 @@ class Document:
 			element.focused = False
 			if element.type.startswith(focusable):
 				focusList.append(element)
+				element.focused = False
 		if len(focusList) == 0:
 			self.focus = URL_BAR_INDEX # no focusable elements, focus on url bar
 			return
 		
-		index = self.focus + 1
-		index = index if index < len(focusList) else 0
-		if len(focusList) > 0:
-			focusList[index].focused = True
-			self.focus = index
+		next_index = self.focus + 1 if self.focus != URL_BAR_INDEX else 0 # skip -1 (no focus)
+		if next_index >= len(focusList):
+			next_index = 0
+		focusList[next_index].focused = True
+		self.focus = next_index
+
+		# index = self.focus + 1
+		# index = index if index < len(focusList) else 0
+		# if len(focusList) > 0:
+		# 	focusList[index].focused = True
+		# 	self.focus = index
 
 		# focused = self.get_focused_element()
 		# focused.focus_cursor_index = len(focused.value)
