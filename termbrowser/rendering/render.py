@@ -1,4 +1,5 @@
 from typing import List
+from art import text2art
 
 from ..adom.constants import COLORS_PAIRS_REVERSE
 from ..adom import Document, Element
@@ -117,12 +118,13 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 	# the write size is used to determine how far away the next element in queue should be placed
 	writeSize = Vec(0, 0)
 
+	background = element.getAttribute("background")
+	background_index = COLORS_PAIRS_REVERSE.get(background, None) if background != None else None
+	foreground = element.getAttribute("foreground")
+	foreground_index = COLORS_PAIRS_REVERSE.get(foreground, None) if foreground != None else None
+
 	if element.type == "cont":
 		padding = getPadding(element, WIDTH, HEIGHT)
-		background = element.getAttribute("background")
-		background_index = COLORS_PAIRS_REVERSE.get(background, None) if background != None else None
-		foreground = element.getAttribute("foreground")
-		foreground_index = COLORS_PAIRS_REVERSE.get(foreground, None) if foreground != None else None
 		direction = getDirection(element)
 		borderType = element.getAttribute("border")
 		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
@@ -193,20 +195,27 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 	elif element.type == "text":
 		# has value
 		if element.value != "":
-			outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
-			alignOffset = getAlignOffset(element, outerSize)
+			preserve_whitespace = element.getAttribute("preserve") == "true"
+
+			padding = getPadding(element, WIDTH, HEIGHT)
+
+			toRender = getRenderedFont(element.value, preserve_whitespace, element.getAttribute("font"))
+			outerSize = parentSize if parentSize != None else Vec(WIDTH - padding['left'] - padding['right'], HEIGHT - padding['top'] - padding['bottom'])
+			alignOffset = getAlignOffset(element, toRender, outerSize)
 			maxWidth = outerSize.x
 			widthAttr = element.getAttribute("width")
 			renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
 
-			# Check if whitespace should be preserved
-			preserve_whitespace = element.getAttribute("preserve") == "true"
-			wrapped_text_size = getWrapAndSize(element.value, renderWidth, preserve_whitespace)
-			wrapped_text = wrapped_text_size["text"]
-			wrapped_size = wrapped_text_size["size"]
+			# We need to preserve whitespace when using a custom font to maintain the font's layout
+			wrapped_text_size = getWrapAndSize(toRender, renderWidth, True if element.getAttribute("font") else preserve_whitespace)
+			wrapped_text: str = wrapped_text_size["text"]
+			wrapped_size: Vec = wrapped_text_size["size"]
 
 			writeSize = wrapped_size
-			startPos = x + alignOffset
+			writeSize.x += padding['left'] + padding['right']
+			writeSize.y += padding['top'] + padding['bottom']
+			boxStartPos = x + alignOffset
+			startPos = x + alignOffset + padding['left']
 
 			textStyle = element.getAttribute("style")
 
@@ -214,7 +223,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			for rowIndex in range(len(renderRows)):
 				rowText = renderRows[rowIndex]
 				rowTextLen = len(rowText)
-				renderY = y + rowIndex
+				renderY = y + rowIndex + padding['top']
 
 				# in bounds
 				if renderY < len(res.rows) and renderY >= 0:
@@ -224,15 +233,20 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 						styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
 					# render single line of text
 					res.rows[renderY] = res.rows[renderY][0:startPos] + rowText + res.rows[renderY][startPos + rowTextLen:]
+
+			# render background
+			if background_index != None:
+				renderBackground(background_index, Vec(boxStartPos, y), writeSize, res)
+			if foreground_index != None:
+				renderForeground(foreground_index, Vec(boxStartPos, y), writeSize, res)
 		else:
 			writeSize = Vec(0, 1)
 
 	elif element.type == "link":
 		toRender = getLinkText(element)
-		toRenderLength = len(toRender)
 
 		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
-		alignOffset = getAlignOffset(element, outerSize)
+		alignOffset = getAlignOffset(element, toRender, outerSize)
 		maxWidth = outerSize.x
 		widthAttr = element.getAttribute("width")
 		renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
@@ -243,6 +257,12 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		startPos = x + alignOffset
 
 		textStyle = element.getAttribute("style")
+
+		# render background
+		if background_index != None:
+			renderBackground(background_index, Vec(x, y), writeSize, res)
+		if foreground_index != None:
+			renderForeground(foreground_index, Vec(x, y), writeSize, res)
 
 		renderRows = wrapped["text"].splitlines()
 		for rowIndex in range(len(renderRows)):
@@ -276,10 +296,10 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 		toRenderLength = len(toRender)
 
 		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
-		alignOffset = getAlignOffset(element, outerSize)
+		alignOffset = getAlignOffset(element, toRender, outerSize, True)
 
 		borderType = "dotted thick" if element.focused else "dotted thin"
-		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res.rows)
+		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
 		writeSize = Vec(toRenderLength + 2, 3)
 		startPos = x + alignOffset + 1
 		renderY = y + 1
@@ -295,12 +315,6 @@ def getLinkText(element):
 	return "[" + element.getAttribute("key") + "] " + element.value
 
 def getWrapAndSize(text: str, maxWidth: int, preserve_whitespace: bool = False):
-	if maxWidth == None:
-		return {
-			"text": text,
-			"size": Vec(len(text), 1)
-		}
-	
 	if preserve_whitespace:
 		# When preserving whitespace, don't do any automatic wrapping
 		# Just split by existing line breaks and truncate lines that are too long
@@ -316,7 +330,7 @@ def getWrapAndSize(text: str, maxWidth: int, preserve_whitespace: bool = False):
 			else:
 				truncated_lines.append(line)
 				actual_width = max(actual_width, len(line))
-		
+
 		result_text = '\n'.join(truncated_lines)
 		return {
 			"text": result_text,
@@ -327,32 +341,49 @@ def getWrapAndSize(text: str, maxWidth: int, preserve_whitespace: bool = False):
 		wrapper = text_wrapper
 		wrapper.width = maxWidth
 		wrappedText = wrapper.fill(text)
+
+		longest_line = max(len(line) for line in wrappedText.splitlines())
+
 		return {
 			"text": wrappedText,
-			"size": Vec(maxWidth if maxWidth < len(text) else len(text), len(wrappedText.splitlines()))
+			"size": Vec(longest_line, len(wrappedText.splitlines()))
 		}
-	
 
-def getAlignOffset(element: Element, parentSize: Vec) -> int:
-	val = element.value
+def getRenderedFont(value: str, preserve_whitespace: bool, font: str) -> str:
+	if not preserve_whitespace:
+		value = value.strip()
+	if font:
+		return text2art(value, font=font).rstrip()
+	return value
+
+def getAlignOffset(element: Element, val: str, parentSize: Vec, isBox: bool = False) -> int:
 	if element.type == "link":
 		val = getLinkText(element)
 
 	align = element.getAttribute("align")
 	defWidth = getDefinedSize(element, parentSize.x, parentSize.y).x
 	preserve_whitespace = element.getAttribute("preserve") == "true" if element.type == "text" else False
-	wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x, preserve_whitespace)
+	
+	finalWidth = defWidth if defWidth != -1 else parentSize.x
+	if not isBox:
+		wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x, preserve_whitespace)
+		finalWidth = wrapped["size"].x
 	if align == "center":
-		return round(float(parentSize.x) / 2.0) - round(float(wrapped["size"].x) / 2.0)
+		return round(float(parentSize.x) / 2.0) - round(float(finalWidth) / 2.0)
 	return 0
 
 def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	if element.type == "text":
 		widthAttr = element.getAttribute("width")
-		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
+		padding = getPadding(element, WIDTH, HEIGHT)
+		renderWidth = parseSize(widthAttr, WIDTH - padding['left'] - padding['right']) if widthAttr != None else WIDTH - padding['left'] - padding['right']
 		preserve_whitespace = element.getAttribute("preserve") == "true"
-		wrapped_text_size = getWrapAndSize(element.value, renderWidth, preserve_whitespace)
-		return wrapped_text_size["size"]
+		val = getRenderedFont(element.value, preserve_whitespace, element.getAttribute("font"))
+		wrapped_text_size = getWrapAndSize(val, renderWidth, preserve_whitespace)
+		res = wrapped_text_size["size"]
+		res.x += padding['left'] + padding['right']
+		res.y += padding['top'] + padding['bottom']
+		return res
 	elif element.type == "link":
 		widthAttr = element.getAttribute("width")
 		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
@@ -451,7 +482,6 @@ def getDefinedSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 	res = Vec(-1, -1)
 	defWidth = element.getAttribute("width")
 	defHeight = element.getAttribute("height")
-	padding = getPadding(element, WIDTH, HEIGHT)
 	if defWidth != None:
 		res.x = parseSize(defWidth, WIDTH)
 	if defHeight != None:

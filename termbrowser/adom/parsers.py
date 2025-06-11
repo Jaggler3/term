@@ -188,7 +188,7 @@ def xml2doc(contents, browser):
     return res
 
 
-def _xml_element_to_adom(xml_element, document):
+def _xml_element_to_adom(xml_element: ET.Element, document: Document):
     # Map XML tag names to internal element types
     tag_mapping = {
         "container": "cont",
@@ -220,8 +220,8 @@ def _xml_element_to_adom(xml_element, document):
             element.setAttribute(attr_name, attr_value)
     
     # Handle special cases
-    if element_type == "input" and element.getAttribute("initial"):
-        element.value = element.getAttribute("initial")
+    if element_type == "input":
+        element.value = element.getAttribute("initial") or ""
         document.hasInputs = True
     
     if element_type == "link":
@@ -229,11 +229,16 @@ def _xml_element_to_adom(xml_element, document):
         link_url = element.getAttribute("url")
         if link_key and link_url:
             document.add_link(link_key, link_url)
+
+    if element_type == "text" and element.value:
+        if not element.getAttribute("preserve") or element.getAttribute("preserve") == "false":
+            element.value = element.value.strip()
     
     # Process child elements recursively
     for child in xml_element:
         child_element = _xml_element_to_adom(child, document)
         if child_element:
             element.appendChild(child_element)
+            child_element.parent = element
     
     return element 

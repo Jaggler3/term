@@ -119,10 +119,14 @@ def special_keys_input_thread():
 			browser.document.focus_next()
 			# _focused = browser.document.get_focused_element()
 		elif user_input == 27: # esc
-			browser.debugHistory += f"Esc: {user_input}\n"
-			browser.document.unfocus()
-			browser.document.focus = -2
-			cursor_index = len(browser.URL)
+			if browser.document.focus == -1:
+				browser.document.unfocus()
+				browser.document.focus = -2
+				cursor_index = len(browser.URL)
+			else:
+				browser.document.unfocus()
+				browser.document.focus = -1
+				cursor_index = -1
 		elif user_input == 259: # up arrow
 			scroll -= 1 if scroll > 0 else 0
 		elif user_input == 258: # down arrow
