@@ -16,48 +16,47 @@ cont
 	-height: 10pc
 end
 cont
-	-direction: row
-	cont
-		-width: 33pc
+	link:Search the web
+		-align: center
+	  -width: 100pc
+		-key: 1
+		-url: http://localhost:3000
+		-style: underline
 	end
-	cont
-		-padding-bottom: 3
-		link:Search the web
-			-key: 1
-			-url: http://localhost:3000
-			-style: underline
-		end
-		br
-		br
-		link:Open settings
-			-key: 2
-			-url: term://settings
-			-style: underline
-		end
-		br
-		br
-		link:Exit Term
-			-key: 3
-			-url: term://exit
-			-style: underline
-		end
+	br
+	br
+	link:Open settings
+		-align: center
+	  -width: 100pc
+		-key: 2
+		-url: term://settings
+		-style: underline
 	end
-end
-cont
-	-padding-left: 33pc
-	text:Press a hotkey ([1], [2], or [3]) to open a link.
-	end
-	text:Press Escape + Escape to edit the URL.
-	end
-	text:Press ` (the ~ key) to force exit.
-	end
-	text:Press Alt + K to open the debugger. (Option + K on Mac)
-	end
-	text:Pres Alt + Q to paste. (Option + Q on Mac)
+	br
+	br
+	link:Exit Term
+		-align: center
+	  -width: 100pc
+		-key: 3
+		-url: term://exit
 		-style: underline
 	end
 end
-action:[start](
-	debug("hello"),
-	debug("world!")
-)
+#cont
+#	-padding-left: 33pc
+#	text:Press a hotkey ([1], [2], or [3]) to open a link.
+#	end
+#	text:Press Escape + Escape to edit the URL.
+#	end
+#	text:Press ` (the ~ key) to force exit.
+#	end
+#	text:Press Alt + K to open the debugger. (Option + K on Mac)
+#	end
+#	text:Pres Alt + Q to paste. (Option + Q on Mac)
+#		-style: underline
+#	end
+#end
+#action:[start](
+#	debug("hello"),
+#	debug("world!")
+#)

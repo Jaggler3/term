@@ -1,7 +1,4 @@
 browser
-- better top bar
-- better text inputs
-- use normal keybinds
 - better styling options
   - bubble text
   - colors

@@ -174,9 +174,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
 		alignOffset = getAlignOffset(element, outerSize)
-		maxWidth = WIDTH
-		if parentSize != None:
-			maxWidth = parentSize.x
+		maxWidth = outerSize.x
 		widthAttr = element.getAttribute("width")
 		renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
 
