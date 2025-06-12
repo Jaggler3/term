@@ -9,11 +9,14 @@
     </container>
     <container width="60pc">
       <text align="center" font="small" padding-bottom="5">
-        term
+        Term
       </text>
-      <input width="60pc"></input>
+      <input width="60pc" submit="search"></input>
     </container>
     <container width="20pc">
     </container>
   </container>
+  <action name="search">
+    visit("http://localhost:3000/search?q=" + encode(value))
+  </action>
 </term>
