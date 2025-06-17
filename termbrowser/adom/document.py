@@ -1,8 +1,12 @@
 """Document class for the ADOM module."""
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from termbrowser.browser import Browser
+
 from typing import List
 import simpleeval
-import termbrowser.browser
 
 from .elements import Element, Action, DocumentLink, createTextElement
 from .utils import get_all_elements
@@ -10,7 +14,7 @@ from .constants import URL_BAR_INDEX
 
 
 class Document:
-    def __init__(self, browser: termbrowser.browser.Browser):
+    def __init__(self, browser: 'Browser'):
         self.browser = browser
         self.links = []
         self.elements = []
