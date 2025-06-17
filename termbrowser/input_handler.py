@@ -33,16 +33,21 @@ class InputHandler:
         """Main input handling loop."""
         while True:
             self.user_input = self.window.get_input()
-            self._handle_special_keys()
-
-            if self.browser.document.focus != -1:
-                self._handle_element_input(chr(self.user_input))
-            elif self.browser.document.focus == -2:
+            
+            # Handle URL bar input first if focused
+            if self.browser.document.focus == -2:
                 self._handle_url_input(chr(self.user_input))
-            elif self.browser.document.find_link(self.user_input) != -1:
-                self.window.exiting = self.browser.open_link(
-                    self.browser.document.links[self.browser.document.find_link(self.user_input)].URL
-                )
+            # Then handle element input if focused
+            elif self.browser.document.focus != -1:
+                self._handle_element_input(chr(self.user_input))
+            # Then handle special keys if nothing is focused
+            elif self.browser.document.focus == -1:
+                self._handle_special_keys()
+                # Handle link navigation
+                if self.browser.document.find_link(self.user_input) != -1:
+                    self.window.exiting = self.browser.open_link(
+                        self.browser.document.links[self.browser.document.find_link(self.user_input)].URL
+                    )
 
             self.browser.scroll = max(0, min(self.browser.scroll, self.browser.document_size.y - self.window.HEIGHT))
 
@@ -61,13 +66,9 @@ class InputHandler:
             self.browser.document.focus_next()
         elif self.user_input == 27:  # esc
             if self.browser.document.focus == -1:
-                self.browser.document.unfocus()
-                self.browser.document.focus = -2
-                self.browser.cursor_index = len(self.browser.URL)
+                self.browser.focus_url_bar()
             else:
-                self.browser.document.unfocus()
-                self.browser.document.focus = -1
-                self.browser.cursor_index = -1
+                self.browser.unfocus_url_bar()
         elif self.user_input == 259:  # up arrow
             self.browser.scroll = max(0, self.browser.scroll - 1)
         elif self.user_input == 258:  # down arrow
@@ -75,6 +76,9 @@ class InputHandler:
 
     def _handle_url_input(self, char: str) -> None:
         """Handle input when URL bar is focused."""
+        # Debug log
+        self.browser.debug(f"URL input: {char} (ord: {ord(char)})")
+        
         if char == chr(226):  # alt + v
             to_insert = remove_spacing(pyperclip.paste())
             self.browser.URL = self.browser.URL[:self.browser.cursor_index] + to_insert + self.browser.URL[self.browser.cursor_index:]
@@ -89,8 +93,9 @@ class InputHandler:
                 self.browser.cursor_index -= 1
         elif char == chr(10):  # enter
             self.browser.open_link(self.browser.URL)
-            self.browser.document.focus = -1
-            self.browser.cursor_index = -1
+            self.browser.unfocus_url_bar()
+        elif char == chr(27):  # esc
+            self.browser.unfocus_url_bar()
         elif char in VALID_INPUT_CHARS:
             self.browser.URL = self.browser.URL[:self.browser.cursor_index] + char + self.browser.URL[self.browser.cursor_index:]
             self.browser.cursor_index += 1
@@ -117,5 +122,7 @@ class InputHandler:
                 focused_element.focus_cursor_index -= 1
         elif char == chr(10):  # enter
             self.browser.document.submit(focused_element)
+        elif char == chr(27):  # esc
+            self.browser.document.unfocus()
         elif char == chr(197):  # Alt + Q
             self.browser.document.unfocus() 

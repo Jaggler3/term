@@ -16,6 +16,7 @@ class Browser:
 		self.debugMode = False
 		self.cursor_index = -1
 		self.scroll = 0
+		self.document.focus = -1  # Initialize focus to -1 (no focus)
 
 	def start_load(self):
 		if not self.loading:
@@ -24,10 +25,14 @@ class Browser:
 		self.document = loadFromURL(self.URL, self)
 		self.loading = False
 		self.document.call_document_action("start", {})
+		# Reset focus state
+		self.document.unfocus()
+		self.cursor_index = -1
+		# Only auto-focus if there are inputs and autofocus is enabled
 		if self.document.hasInputs:
 			self.document.focus_next()
 			focused = self.document.get_focused_element()
-			if focused.getAttribute("autofocus") == "no":
+			if focused and focused.getAttribute("autofocus") == "no":
 				self.document.unfocus()
 
 	def createEvaluator(self):
@@ -77,6 +82,18 @@ class Browser:
 			"encode": self.encode,
 			"debug": self.debug
 		}
+
+	def focus_url_bar(self) -> None:
+		"""Focus the URL bar and set cursor position."""
+		self.document.unfocus()
+		self.document.focus = -2
+		self.cursor_index = len(self.URL)
+
+	def unfocus_url_bar(self) -> None:
+		"""Unfocus the URL bar."""
+		self.document.unfocus()
+		self.document.focus = -1
+		self.cursor_index = -1
 
 """
 term:// -> files in the ./local/ folder of the term project

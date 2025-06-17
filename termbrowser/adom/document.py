@@ -44,17 +44,40 @@ class Document:
             if element.type.startswith(focusable):
                 focusList.append(element)
                 element.focused = False
-        if len(focusList) == 0:
-            self.focus = URL_BAR_INDEX # no focusable elements, focus on url bar
+
+        # If we're currently focused on the URL bar, try to focus the first element
+        if self.focus == URL_BAR_INDEX:
+            if len(focusList) > 0:
+                element = focusList[0]
+                element.focused = True
+                element.focus_cursor_index = len(element.value)
+                self.focus = 0
+            else:
+                self.unfocus()
             return
-        
-        next_index = self.focus + 1 if self.focus != URL_BAR_INDEX else 0 # skip -1 (no focus)
-        if next_index >= len(focusList):
-            next_index = 0
-        element = focusList[next_index]
-        element.focused = True
-        element.focus_cursor_index = len(element.value)
-        self.focus = next_index
+
+        # If we're focused on an element, try to focus the next one
+        if self.focus >= 0:
+            next_index = self.focus + 1
+            if next_index >= len(focusList):
+                # If no more elements, focus URL bar
+                self.unfocus()
+                self.focus = URL_BAR_INDEX
+            else:
+                element = focusList[next_index]
+                element.focused = True
+                element.focus_cursor_index = len(element.value)
+                self.focus = next_index
+            return
+
+        # If nothing is focused, focus the first element or URL bar
+        if len(focusList) > 0:
+            element = focusList[0]
+            element.focused = True
+            element.focus_cursor_index = len(element.value)
+            self.focus = 0
+        else:
+            self.focus = URL_BAR_INDEX
 
     def get_focused_element(self):
         if self.focus > -1:	
