@@ -13,7 +13,7 @@
       <input icon="\u2315" width="100pc" submit="search"></input>
     </container>
   </container>
-  <table>
+  <!-- <table border="thin">
     <row>
       <cell>
         <text>
@@ -24,21 +24,36 @@
         <text>
           header 2
         </text>
+        <text>
+          header 3
+        </text>
       </cell>
     </row>
     <row>
       <cell>
         <text>
-          row 1
+          cell 1
         </text>
       </cell>
       <cell>
         <text>
-          row 2
+          cell 2
         </text>
       </cell>
-    </row>  
-  </table>
+    </row>
+    <row>
+      <cell>
+        <text>
+          cell 1
+        </text>
+      </cell>
+      <cell>
+        <text>
+          cell 2
+        </text>
+      </cell>
+    </row> 
+  </table> -->
   <action name="search">
     visit("http://localhost:3000/search?q=" + encode(value))
   </action>

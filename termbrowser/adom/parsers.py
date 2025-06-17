@@ -195,7 +195,10 @@ def _xml_element_to_adom(xml_element: ET.Element, document: Document):
         "text": "text",
         "link": "link",
         "input": "input",
-        "br": "br"
+        "br": "br",
+        "table": "table",
+        "row": "row",
+        "cell": "cell"
     }
     
     tag = xml_element.tag

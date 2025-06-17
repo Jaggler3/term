@@ -19,8 +19,8 @@ class Element:
     def __init__(self, type):
         self.type = type
         self.value: str | None = None
-        self.attributes = []
-        self.children = []
+        self.attributes: List[Attribute] = []
+        self.children: List[Element] = []
         self.focused = False
         self.focus_cursor_index = 0
         self.parent: Element | None = None

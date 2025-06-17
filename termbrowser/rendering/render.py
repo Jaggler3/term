@@ -8,7 +8,7 @@ from ..util import *
 from .style import OutputStyle
 from .util import getPadding, getDirection, parseSize
 from .text_util import getWrapAndSize, getRenderedFont, getLinkText
-from .border_util import renderBorder
+from .border_util import renderBorder, renderTableBorder
 from .element_util import getAlignOffset, getElementSize
 from .style_constants import TextStyles, DEFAULT_INPUT_WIDTH
 
@@ -104,17 +104,13 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 		direction = getDirection(element)
 		borderType = element.getAttribute("border")
 		initialOffset = Vec(padding['left'], padding['top'])
-		calculatedSize = getElementSize(element, parentSize)
+		writeSize = getElementSize(element, parentSize)
 
 		if borderType != None:
 			initialOffset.add(1, 1)
 
 		offset = cloneVec(initialOffset)
 
-		# set write size
-		writeSize = calculatedSize
-
-		# render background
 		if background_index != None:
 			renderBackground(background_index, Vec(x, y), writeSize, res)
 		if foreground_index != None:
@@ -122,7 +118,7 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 
 		# render children with clamp, calculated pc
 		for child in element.children:
-			singleSize = renderElement(child, x + offset.x, y + offset.y, SCREEN_WIDTH, SCREEN_HEIGHT, res, styles, calculatedSize)
+			singleSize = renderElement(child, x + offset.x, y + offset.y, SCREEN_WIDTH, SCREEN_HEIGHT, res, styles, writeSize)
 
 			if direction == "row":
 				offset.x += singleSize.x
@@ -131,7 +127,7 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 
 		# render border
 		if borderType != None:
-			renderBorder(borderType, Vec(x, y), calculatedSize, res)
+			renderBorder(borderType, Vec(x, y), writeSize, res)
 
 	elif element.type == "text":
 		if element.value != "":
@@ -259,5 +255,71 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 
 	elif element.type == "br":
 		writeSize = Vec(1, 1)
+
+	elif element.type == "table":
+		# tables are just like containers, but they manage the rows and cells
+		# notes:
+		# - tables dont have padding
+		# - tables have a default border type of "dotted thick"
+
+		borderType = element.getAttribute("border")
+		borderType = "dotted thick" if borderType == None else borderType
+
+		writeSize = getElementSize(element, parentSize)
+
+		if background_index != None:
+			renderBackground(background_index, Vec(x, y), writeSize, res)
+		if foreground_index != None:
+			renderForeground(foreground_index, Vec(x, y), writeSize, res)
+
+		tableRows = [x for x in element.children if x.type == "row"]
+
+		# get column widths by getting max width of cells in each column
+		rowWithMostCells = max(tableRows, key=lambda x: len([x for x in x.children if x.type == "cell"]))
+		columnWidths = [1] * len([x for x in rowWithMostCells.children if x.type == "cell"])
+		rowHeights = [1] * len(tableRows)
+
+		for i, row in enumerate(tableRows):
+			rowCells = [x for x in row.children if x.type == "cell"]
+			for j, cell in enumerate(rowCells):
+				cellSize = getElementSize(cell, parentSize)
+				columnWidths[j] = max(columnWidths[j], cellSize.x)
+				rowHeights[i] = max(rowHeights[i], cellSize.y)
+				
+		offset = Vec(1, 1)
+		for i, row in enumerate(tableRows):
+			rowCells = [x for x in row.children if x.type == "cell"]
+			for j, cell in enumerate(rowCells):
+				cellSize = getElementSize(cell, writeSize)
+				renderElement(cell, x + offset.x, y + offset.y, SCREEN_WIDTH, SCREEN_HEIGHT, res, styles, cellSize)
+				offset.x += columnWidths[j]
+			offset.x = 1
+			offset.y += rowHeights[i] + 1
+
+		if borderType != None:
+			renderTableBorder(borderType, Vec(x, y), columnWidths, rowHeights, res)
+
+	elif element.type == "cell":
+		# a cell is just like a container, except the default width is to fit the content
+		# and the default height is to fit the content
+		writeSize = getElementSize(element, parentSize)
+
+		padding = getPadding(element, parentSize.x, parentSize.y)
+		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
+		innerSize = parentSize - paddingSize
+
+		if background_index != None:
+			renderBackground(background_index, Vec(x, y), writeSize, res)
+		if foreground_index != None:
+			renderForeground(foreground_index, Vec(x, y), writeSize, res)
+
+		direction = getDirection(element)
+		offset = Vec(padding['left'], padding['top'])
+		for child in element.children:
+			singleSize = renderElement(child, x + offset.x, y + offset.y, SCREEN_WIDTH, SCREEN_HEIGHT, res, styles, innerSize)
+			if direction == "row":
+				offset.x += singleSize.x
+			elif direction == "column":
+				offset.y += singleSize.y
 
 	return writeSize

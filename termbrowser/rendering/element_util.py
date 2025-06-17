@@ -81,4 +81,64 @@ def getElementSize(element: Element, parentSize: Vec) -> Vec:
         return res
     elif element.type == "br":
         return Vec(1, 1)
+    elif element.type == "table":
+        childrenSize = Vec(0, 0)
+        defSize = getDefinedSize(element, parentSize)
+        hasDefWidth = defSize.x != -1
+        hasDefHeight = defSize.y != -1
+
+        tableRows = [x for x in element.children if x.type == "row"]
+
+        # get column widths by getting max width of cells in each column
+        rowWithMostCells = max(tableRows, key=lambda x: len([x for x in x.children if x.type == "cell"]))
+        columnWidths = [1] * len([x for x in rowWithMostCells.children if x.type == "cell"])
+        rowHeights = [1] * len(tableRows)
+
+        for row in tableRows:
+            rowCells = [x for x in row.children if x.type == "cell"]
+            for i, cell in enumerate(rowCells):
+                cellSize = getElementSize(cell, parentSize)
+                columnWidths[i] = max(columnWidths[i], cellSize.x)
+            rowHeights[i] = max(rowHeights[i], cellSize.y)
+
+        childrenSize.x = sum(columnWidths) + len(columnWidths) - 1 # account for borders
+        childrenSize.y = sum(rowHeights) + len(rowHeights) - 1 # account for borders
+
+        res = Vec(
+            defSize.x if hasDefWidth else childrenSize.x,
+            defSize.y if hasDefHeight else childrenSize.y
+        )
+
+        # enforce box-sizing
+        res.add(-2 if hasDefWidth else 0, -2 if hasDefHeight else 0)
+
+        return res
+    elif element.type == "cell":
+        childrenSize = Vec(0, 0)
+        padding = getPadding(element, parentSize.x, parentSize.y)
+        paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
+        innerSize = parentSize - paddingSize
+        defSize = getDefinedSize(element, parentSize)
+        hasDefWidth = defSize.x != -1
+        hasDefHeight = defSize.y != -1
+
+        for child in element.children:
+            singleSize = getElementSize(
+                child,
+                innerSize
+            )
+            direction = getDirection(element)
+            if direction == "row":
+                childrenSize.x += singleSize.x
+                childrenSize.y = max(childrenSize.y, singleSize.y)
+            elif direction == "column":
+                childrenSize.y += singleSize.y
+                childrenSize.x = max(childrenSize.x, singleSize.x)
+
+        res = Vec(
+            defSize.x if hasDefWidth else childrenSize.x + paddingSize.x,
+            defSize.y if hasDefHeight else childrenSize.y + paddingSize.y
+        )
+
+        return res
     return None 
