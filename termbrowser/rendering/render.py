@@ -219,12 +219,16 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			startPos = x + alignOffset + padding['left']
 
 			textStyle = element.getAttribute("style")
-
+			
 			renderRows = wrapped_text.splitlines()
 			for rowIndex in range(len(renderRows)):
 				rowText = renderRows[rowIndex]
-				rowTextLen = len(rowText)
+				finalMaxSize = maxWidth - startPos
+				clippedRowText = rowText[:finalMaxSize]
+				rowTextLen = len(clippedRowText)
 				renderY = y + rowIndex + padding['top']
+
+				endPos = min(startPos + rowTextLen, maxWidth)
 
 				# in bounds
 				if renderY < len(res.rows) and renderY >= 0:
@@ -233,7 +237,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 						styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
 						styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
 					# render single line of text
-					res.rows[renderY] = res.rows[renderY][0:startPos] + rowText + res.rows[renderY][startPos + rowTextLen:]
+					res.rows[renderY] = res.rows[renderY][0:startPos] + clippedRowText + res.rows[renderY][endPos:]
 
 			# render background
 			if background_index != None:
