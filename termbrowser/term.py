@@ -8,13 +8,11 @@ parser.add_argument("--url", help="the URL you would like to visit")
 args = parser.parse_args()
 INIT_URL = args.url
 
-import os
 import traceback
 import curses
 import threading
 import time
 import pyperclip
-import signal
 
 from .adom import Document, Element
 from .browser import *
@@ -28,18 +26,16 @@ curses.start_color()
 
 browser: Browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
 
-prev_resize_count = 0
-resize_count = 0
-
 user_input = None
 special_keys_input_thread_handle = None
-text_input_thread_handle = None
 cursor_index: int = -1
 scroll: int = 0
 
 paste_mode: bool = False
 
 fps: int = 60 # 20 frames per second
+
+document_size: Vec = Vec(0, 0)
 
 colormap = {
 	1: curses.COLOR_WHITE,
@@ -53,10 +49,8 @@ colormap = {
 }
 
 def setup(screen: curses.window):
-	global window, resize_count, prev_resize_count, browser
+	global window, browser
 	window = Window(screen)
-	resize_count = 0
-	prev_resize_count = 0
 
 	# loop through all colors and create a pair for each
 	for background in range(1, 9):
@@ -70,11 +64,7 @@ def setup(screen: curses.window):
 	lifecycle()
 
 def lifecycle():
-	global window, text_input_thread_handle, special_keys_input_thread_handle, prev_resize_count, resize_count, browser
-
-	# text_input_thread_handle = threading.Thread(name="daemon", target=text_input_thread, args=())
-	# text_input_thread_handle.setDaemon(True)
-	# text_input_thread_handle.start()
+	global window, special_keys_input_thread_handle, browser
 
 	special_keys_input_thread_handle = threading.Thread(name="daemon", target=special_keys_input_thread, args=())
 	special_keys_input_thread_handle.setDaemon(True)
@@ -85,11 +75,8 @@ def lifecycle():
 	while True:
 		try:
 			resized = window.get_resized()
-			# if resize_count != prev_resize_count:
 			if resized:
 				window.resize()
-				browser.debugHistory += f"Resized: {resize_count}\n"
-				prev_resize_count = resize_count
 				continue
 			update()
 			render()
@@ -101,21 +88,11 @@ def lifecycle():
 			curses.endwin()
 			sys.exit(0)
 		except Exception as e:
-			# curses.endwin()
 			traceback.print_exc(file=sys.stdout)
 			browser.debug(str(e))
 
-def text_input_thread():
-	global window, user_input, cursor_index, scroll
-	while True:
-		user_input = window.get_input_text()
-		browser.debugHistory += f"Text Input: {user_input}\n"
-		time.sleep(0.01)
-
-
 def special_keys_input_thread():
 	global window, user_input, cursor_index, scroll
-	browser.debugHistory += f"Special Keys Input: {curses.COLOR_PAIRS} \n"
 	while True:
 		user_input = window.get_input()
 
@@ -130,7 +107,6 @@ def special_keys_input_thread():
 			browser.debugMode = not browser.debugMode
 		elif user_input == 9: # tab:
 			browser.document.focus_next()
-			# _focused = browser.document.get_focused_element()
 		elif user_input == 27: # esc
 			if browser.document.focus == -1:
 				browser.document.unfocus()
@@ -143,12 +119,10 @@ def special_keys_input_thread():
 		elif user_input == 259: # up arrow
 			scroll -= 1 if scroll > 0 else 0
 		elif user_input == 258: # down arrow
-			scroll += 1
+			scroll += 1 if scroll < document_size.y - window.HEIGHT else 0
 		elif browser.document.focus != -1:
 			char = chr(user_input)
 			inputChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?`~"
-			# use for debugging
-			# browser.URL += str(user_input) + char
 			if browser.document.focus == -2: # URL
 				if user_input == 226: # alt + v to enable paste
 					toInsert = remove_spacing(pyperclip.paste())
@@ -195,18 +169,19 @@ def special_keys_input_thread():
 		elif browser.document.find_link(user_input) != -1:
 			window.exiting = browser.open_link(browser.document.links[browser.document.find_link(user_input)].URL)
 
+		scroll = max(0, min(scroll, document_size.y - window.HEIGHT))
+
 def update():
 	global window, user_input
 	if window.exiting:
 		exit(0)
-	if browser.loading:
-		cursor_index = -1
 	user_input = ""
 
 def remove_spacing(string: str):
 	return string.replace("\t", "").replace("\n", "")
 
 def render():
+	global document_size
 	window.start_render(0, 0)
 
 	# URL
@@ -226,7 +201,8 @@ def render():
 	window.render("\N{HEAVY CHECK MARK}" if not browser.loading else "\N{DOTTED CIRCLE}", curses.A_UNDERLINE, [1] * 2, [2] * 2)
 
 	# Document
-	(output, styles, backgrounds, foregrounds) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
+	(output, styles, backgrounds, foregrounds, calculated_size) = renderDocument(browser.document, window.WIDTH, window.HEIGHT, scroll)
+	document_size = calculated_size
 
 	backgrounds_flattened = [item for sublist in backgrounds for item in sublist]
 	foregrounds_flattened = [item for sublist in foregrounds for item in sublist]
@@ -235,6 +211,7 @@ def render():
 		window.WIDTH * (window.HEIGHT - 1) - 1 # remove last line to account for URL bar, remove last character to stop scroll
 	)
 
+	# Elements
 	render_pieces = get_pieces(styles, len(output))
 	window.start_render(1, 0)
 	for piece in render_pieces:

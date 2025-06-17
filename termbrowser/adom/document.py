@@ -77,6 +77,8 @@ class Document:
         self.focus = URL_BAR_INDEX
 
     def add_link(self, key: str, URL: str):
+        if int(key) < 0 or int(key) > 9:
+            return
         self.links.append(DocumentLink(ord(key), URL))
 
     def find_link(self, key: int):

@@ -67,6 +67,14 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
 	# cursor starts at the top left corner
 	cursor = Vec(0, 0)
 
+	# mock container with all children to get the size of the document
+	mockContainer = Element("cont")
+	mockContainer.children = document.elements
+	mockContainer.type = "cont"
+	mockContainer.setAttribute("width", "100pc")
+
+	mockSize = getElementSize(mockContainer, Vec(width, height))
+
 	# recursively render all elements to the screen
 	for element in document.elements:
 		writeSize = renderElement(element, cursor.x, cursor.y - scroll, width, height, res, styles, Vec(width, height))
@@ -82,7 +90,7 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
 	for style in styles:
 		style.start = style.start.x + (style.start.y * width)
 
-	return (out, styles, res.backgrounds, res.foregrounds)
+	return (out, styles, res.backgrounds, res.foregrounds, mockSize)
 
 # row list filled with empty
 def clearScreen(width: int, height: int, background: int, foreground: int) -> RenderOutput:
@@ -107,13 +115,13 @@ def renderDebugger(text: str, width: int, height: int) -> str:
 
 def renderBackground(background_index: int, pos: Vec, size: Vec, res: RenderOutput):
 	for y in range(pos.y, pos.y + size.y):
-		for x in range(pos.x, pos.x + size.x):
-			res.backgrounds[y][x] = background_index
+		if y < len(res.backgrounds):
+			res.backgrounds[y][pos.x:pos.x + size.x] = [background_index] * size.x
 
 def renderForeground(foreground_index: int, pos: Vec, size: Vec, res: RenderOutput):
 	for y in range(pos.y, pos.y + size.y):
-		for x in range(pos.x, pos.x + size.x):
-			res.foregrounds[y][x] = foreground_index
+		if y < len(res.foregrounds):
+			res.foregrounds[y][pos.x:pos.x + size.x] = [foreground_index] * size.x
 
 def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HEIGHT: int, res: RenderOutput, styles: list, parentSize: Vec):
 	# the write size is used to determine how far away the next element in queue should be placed

@@ -102,7 +102,6 @@ def loadFromURL(URL: str, browser: Browser):
 		except FileNotFoundError:
 			return termbrowser.adom.Document(browser).with_message("Could not load `{}`".format(file_path))
 	elif protocol == "https://" or protocol == "http://":
-		couldOpen = True
 		sleep(.1)
 		try:
 			return makeRequest(browser, URL)
