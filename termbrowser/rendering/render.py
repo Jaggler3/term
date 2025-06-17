@@ -168,7 +168,6 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 			renderBorder(borderType, Vec(x, y), calculatedSize, res)
 
 	elif element.type == "text":
-		# has value
 		if element.value != "":
 			preserve_whitespace = element.getAttribute("preserve") == "true"
 
@@ -180,10 +179,7 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 			widthAttr = element.getAttribute("width")
 			renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
 
-			logs = ""
-			# logs = f"maxWidth: {maxWidth}"
-
-			toRender = getRenderedFont(f"{logs} {element.value}", preserve_whitespace, element.getAttribute("font"))
+			toRender = getRenderedFont(f"{element.value}", preserve_whitespace, element.getAttribute("font"))
 			alignOffset = getAlignOffset(element, toRender, innerSize)
 
 			# We need to preserve whitespace when using a custom font to maintain the font's layout

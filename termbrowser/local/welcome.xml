@@ -1,10 +1,10 @@
 <term type="m100_xml">
   <container direction="row" width="100pc" background="black" foreground="white" padding-top="3">
     <container padding-left="2pc" width="18pc">
-      <link width="15" key="1" background="cyan" foreground="black" url="term://settings">Settings</link>
+      <!-- <link width="15" key="1" background="cyan" foreground="black" url="term://settings">Settings</link>
       <br/>
-      <br/>
-      <link width="15" key="2" background="cyan" foreground="black" url="term://exit">Exit</link>
+      <br/> -->
+      <link width="15" key="1" background="cyan" foreground="black" url="term://exit">Exit</link>
     </container>
     <container width="60pc">
       <text align="center" font="small" padding-bottom="5">
