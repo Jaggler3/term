@@ -5,6 +5,13 @@ class Vec:
 	def add(self, x: int, y: int):
 		self.x += x
 		self.y += y
+	def sub(self, x: int, y: int):
+		self.x -= x
+		self.y -= y
+	def __sub__(self, other: 'Vec') -> 'Vec':
+		return Vec(self.x - other.x, self.y - other.y)
+	def __add__(self, other: 'Vec') -> 'Vec':
+		return Vec(self.x + other.x, self.y + other.y)
 
 def cloneVec(vec: Vec) -> Vec:
 	return Vec(vec.x, vec.y)

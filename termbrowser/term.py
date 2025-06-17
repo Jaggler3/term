@@ -58,14 +58,6 @@ def setup(screen: curses.window):
 	resize_count = 0
 	prev_resize_count = 0
 
-	# def resize_handler(signum, frame):
-	# 	browser.debugHistory += f"Resized: {resize_count}\n"
-	# 	window.resize()
-	# 	curses.resizeterm(*screen.getmaxyx())
-	# 	resize_count += 1
-
-	# signal.signal(signal.SIGWINCH, resize_handler)
-
 	# loop through all colors and create a pair for each
 	for background in range(1, 9):
 		for foreground in range(1, 9):

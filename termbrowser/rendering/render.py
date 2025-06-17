@@ -69,7 +69,7 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
 
 	# recursively render all elements to the screen
 	for element in document.elements:
-		writeSize = renderElement(element, cursor.x, cursor.y - scroll, width, height, res, styles, None)
+		writeSize = renderElement(element, cursor.x, cursor.y - scroll, width, height, res, styles, Vec(width, height))
 		# move the cursor down using the size of the rendered element
 		cursor.y += writeSize.y
 
@@ -115,7 +115,7 @@ def renderForeground(foreground_index: int, pos: Vec, size: Vec, res: RenderOutp
 		for x in range(pos.x, pos.x + size.x):
 			res.foregrounds[y][x] = foreground_index
 
-def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res: RenderOutput, styles: list, parentSize: Vec):
+def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HEIGHT: int, res: RenderOutput, styles: list, parentSize: Vec):
 	# the write size is used to determine how far away the next element in queue should be placed
 	writeSize = Vec(0, 0)
 
@@ -125,54 +125,20 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 	foreground_index = COLORS_PAIRS_REVERSE.get(foreground, None) if foreground != None else None
 
 	if element.type == "cont":
-		padding = getPadding(element, WIDTH, HEIGHT)
+		id = element.getAttribute("id")
+		padding = getPadding(element, parentSize.x, parentSize.y)
 		direction = getDirection(element)
 		borderType = element.getAttribute("border")
-		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
 		initialOffset = Vec(padding['left'], padding['top'])
-		defSize = getDefinedSize(element, WIDTH, HEIGHT)
-
-		hasDefWidth = defSize.x != -1
-		hasDefHeight = defSize.y != -1
+		calculatedSize = getElementSize(element, parentSize)
 
 		if borderType != None:
 			initialOffset.add(1, 1)
 
 		offset = cloneVec(initialOffset)
 
-		childrenSize = Vec(0, 0)
-
-		# get children size (uncalculated pc)
-		for child in element.children:
-			defSingleSize = getDefinedSize(child, WIDTH, HEIGHT)
-			otherSingleSize = getElementSize(child, WIDTH, HEIGHT)
-			singleSize = Vec(
-				otherSingleSize.x if defSingleSize.x == -1 else defSingleSize.x,
-				otherSingleSize.y if defSingleSize.y == -1 else defSingleSize.y
-			)
-
-			if direction == "row":
-				childrenSize.x += singleSize.x
-				childrenSize.y = max(childrenSize.y, singleSize.y)
-			elif direction == "column":
-				childrenSize.y += singleSize.y
-				childrenSize.x = max(childrenSize.x, singleSize.x)
-
-		# get defined size -> fallback on children collective size
-		contSize = Vec(
-			defSize.x if hasDefWidth else childrenSize.x + paddingSize.x,
-			defSize.y if hasDefHeight else childrenSize.y + paddingSize.y
-		)
-
-		# enforce box-sizing
-		if borderType != None:
-			contSize.add(-2 if hasDefWidth else 0, -2 if hasDefHeight else 0)
-
 		# set write size
-		if borderType != None:
-			writeSize = Vec(contSize.x + 2, contSize.y + 2)
-		else:
-			writeSize = contSize
+		writeSize = calculatedSize
 
 		# render background
 		if background_index != None:
@@ -182,7 +148,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 		# render children with clamp, calculated pc
 		for child in element.children:
-			singleSize = renderElement(child, x + offset.x, y + offset.y, WIDTH, HEIGHT, res, styles, contSize)
+			singleSize = renderElement(child, x + offset.x, y + offset.y, SCREEN_WIDTH, SCREEN_HEIGHT, res, styles, calculatedSize)
 
 			if direction == "row":
 				offset.x += singleSize.x
@@ -191,53 +157,53 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 		# render border
 		if borderType != None:
-			renderBorder(borderType, Vec(x, y), contSize, res)
+			renderBorder(borderType, Vec(x, y), calculatedSize, res)
 
 	elif element.type == "text":
 		# has value
 		if element.value != "":
 			preserve_whitespace = element.getAttribute("preserve") == "true"
 
-			padding = getPadding(element, WIDTH, HEIGHT)
+			padding = getPadding(element, parentSize.x, parentSize.y)
+			paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
+			innerSize = parentSize - paddingSize
 
-			toRender = getRenderedFont(element.value, preserve_whitespace, element.getAttribute("font"))
-			outerSize = parentSize if parentSize != None else Vec(WIDTH - padding['left'] - padding['right'], HEIGHT - padding['top'] - padding['bottom'])
-			alignOffset = getAlignOffset(element, toRender, outerSize)
-			maxWidth = outerSize.x
+			maxWidth = innerSize.x
 			widthAttr = element.getAttribute("width")
 			renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
+
+			logs = ""
+			# logs = f"maxWidth: {maxWidth}"
+
+			toRender = getRenderedFont(f"{logs} {element.value}", preserve_whitespace, element.getAttribute("font"))
+			alignOffset = getAlignOffset(element, toRender, innerSize)
 
 			# We need to preserve whitespace when using a custom font to maintain the font's layout
 			wrapped_text_size = getWrapAndSize(toRender, renderWidth, True if element.getAttribute("font") else preserve_whitespace)
 			wrapped_text: str = wrapped_text_size["text"]
 			wrapped_size: Vec = wrapped_text_size["size"]
 
-			writeSize = wrapped_size
-			writeSize.x += padding['left'] + padding['right']
-			writeSize.y += padding['top'] + padding['bottom']
+			writeSize = wrapped_size + paddingSize
 			boxStartPos = x + alignOffset
-			startPos = x + alignOffset + padding['left']
+			startPos = boxStartPos + paddingSize.x
 
 			textStyle = element.getAttribute("style")
 			
 			renderRows = wrapped_text.splitlines()
 			for rowIndex in range(len(renderRows)):
 				rowText = renderRows[rowIndex]
-				finalMaxSize = maxWidth - startPos
-				clippedRowText = rowText[:finalMaxSize]
-				rowTextLen = len(clippedRowText)
-				renderY = y + rowIndex + padding['top']
+				endPos = startPos + len(rowText)
 
-				endPos = min(startPos + rowTextLen, maxWidth)
+				renderY = y + rowIndex + padding['top']
 
 				# in bounds
 				if renderY < len(res.rows) and renderY >= 0:
 					# styled text
 					if textStyle != None and textStyle.startswith(TextStyles):
 						styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
-						styles.append(OutputStyle(Vec(startPos + rowTextLen, renderY), "normal"))
+						styles.append(OutputStyle(Vec(startPos + len(rowText), renderY), "normal"))
 					# render single line of text
-					res.rows[renderY] = res.rows[renderY][0:startPos] + clippedRowText + res.rows[renderY][endPos:]
+					res.rows[renderY] = res.rows[renderY][0:startPos] + rowText + res.rows[renderY][endPos:]
 
 			# render background
 			if background_index != None:
@@ -284,19 +250,24 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 	elif element.type == "input":
 		icon = element.getAttribute("icon")
-		defSize = getDefinedSize(element, WIDTH, HEIGHT)
-		calcWidth = defSize.x if defSize.x != -1 else DEFAULT_INPUT_WIDTH
+		calculatedSize = getElementSize(element, parentSize)
+		calcWidth = calculatedSize.x if calculatedSize.x != -1 else DEFAULT_INPUT_WIDTH
 		renderCursor = "\N{FULL BLOCK}" if element.focused else ""
 		val = element.value
 		idx = element.focus_cursor_index
 		draw_cursor_end = val[idx + 1:] if idx < len(val) and idx != -1 else ""
 		draw_cursor = val[:idx] + renderCursor + draw_cursor_end
+
+		innerWidth = calcWidth - 2 # account for border
+		if icon != None:
+			innerWidth -= 3 # account for icon
+
 		toRender = rcaplen(
 			expand_len(
 				draw_cursor if idx != -1 else val,
-				calcWidth
+				innerWidth
 			),
-			calcWidth
+			innerWidth
 		)
 		
 		# add icon if it exists
@@ -306,8 +277,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 
 		toRenderLength = len(toRender)
 
-		outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
-		alignOffset = getAlignOffset(element, toRender, outerSize, True)
+		alignOffset = getAlignOffset(element, toRender, parentSize)
 
 		borderType = "dotted thick" if element.focused else "dotted thin"
 		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
@@ -367,12 +337,14 @@ def getRenderedFont(value: str, preserve_whitespace: bool, font: str) -> str:
 		return text2art(value, font=font).rstrip()
 	return value
 
-def getAlignOffset(element: Element, val: str, parentSize: Vec, isBox: bool = False) -> int:
+def getAlignOffset(element: Element, val: str, parentSize: Vec) -> int:
 	if element.type == "link":
 		val = getLinkText(element)
 
+	isBox = element.type == "input"
+
 	align = element.getAttribute("align")
-	defWidth = getDefinedSize(element, parentSize.x, parentSize.y).x
+	defWidth = getDefinedSize(element, parentSize).x
 	preserve_whitespace = element.getAttribute("preserve") == "true" if element.type == "text" else False
 	
 	finalWidth = defWidth if defWidth != -1 else parentSize.x
@@ -381,13 +353,17 @@ def getAlignOffset(element: Element, val: str, parentSize: Vec, isBox: bool = Fa
 		finalWidth = wrapped["size"].x
 	if align == "center":
 		return round(float(parentSize.x) / 2.0) - round(float(finalWidth) / 2.0)
+	if align == "right":
+		wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x, preserve_whitespace)
+		finalWidth = wrapped["size"].x
+		return parentSize.x - finalWidth
 	return 0
 
-def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
+def getElementSize(element: Element, parentSize: Vec) -> Vec:
 	if element.type == "text":
 		widthAttr = element.getAttribute("width")
-		padding = getPadding(element, WIDTH, HEIGHT)
-		renderWidth = parseSize(widthAttr, WIDTH - padding['left'] - padding['right']) if widthAttr != None else WIDTH - padding['left'] - padding['right']
+		padding = getPadding(element, parentSize.x, parentSize.y)
+		renderWidth = parseSize(widthAttr, parentSize.x - padding['left'] - padding['right']) if widthAttr != None else parentSize.x - padding['left'] - padding['right']
 		preserve_whitespace = element.getAttribute("preserve") == "true"
 		val = getRenderedFont(element.value, preserve_whitespace, element.getAttribute("font"))
 		wrapped_text_size = getWrapAndSize(val, renderWidth, preserve_whitespace)
@@ -397,23 +373,28 @@ def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 		return res
 	elif element.type == "link":
 		widthAttr = element.getAttribute("width")
-		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
+		renderWidth = parseSize(widthAttr, parentSize.x) if widthAttr != None else parentSize.x
 		wrapped_text_size = getWrapAndSize(getLinkText(element), renderWidth)
 		return wrapped_text_size["size"]
 	elif element.type == "input":
 		widthAttr = element.getAttribute("width")
-		renderWidth = parseSize(widthAttr, WIDTH) if widthAttr != None else WIDTH
-		return Vec(renderWidth + 2, 3)
+		renderWidth = parseSize(widthAttr, parentSize.x) if widthAttr != None else parentSize.x
+		return Vec(renderWidth, 3)
 	elif element.type == "cont":
 		childrenSize = Vec(0, 0)
-		padding = getPadding(element, WIDTH, HEIGHT)
+		padding = getPadding(element, parentSize.x, parentSize.y)
 		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
-		defSize = getDefinedSize(element, WIDTH, HEIGHT)
+		innerSize = parentSize - paddingSize
+		defSize = getDefinedSize(element, parentSize)
 		hasDefWidth = defSize.x != -1
 		hasDefHeight = defSize.y != -1
+		borderType = element.getAttribute("border")
 
 		for child in element.children:
-			singleSize = getElementSize(child, WIDTH, HEIGHT)
+			singleSize = getElementSize(
+				child,
+				innerSize
+			)
 			direction = getDirection(element)
 			if direction == "row":
 				childrenSize.x += singleSize.x
@@ -426,6 +407,10 @@ def getElementSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
 			defSize.x if hasDefWidth else childrenSize.x + paddingSize.x,
 			defSize.y if hasDefHeight else childrenSize.y + paddingSize.y
 		)
+
+		# enforce box-sizing
+		if borderType != None:
+			res.add(-2 if hasDefWidth else 0, -2 if hasDefHeight else 0)
 
 		return res
 	elif element.type == "br":
@@ -489,14 +474,26 @@ def renderBorder(type: str, pos: Vec, size: Vec, res: RenderOutput):
 		# establish last row
 		res.rows[lastBorderContentY] = lastRow if len(lastRow) <= screenSize.x else lastRow[:screenSize.x]
 
-def getDefinedSize(element: Element, WIDTH: int, HEIGHT: int) -> Vec:
+def getDefinedSize(element: Element, parentSize: Vec) -> Vec:
 	res = Vec(-1, -1)
 	defWidth = element.getAttribute("width")
+	if element.type == "cont":
+		defWidth = defWidth if defWidth != None else "100pc"
 	defHeight = element.getAttribute("height")
 	if defWidth != None:
-		res.x = parseSize(defWidth, WIDTH)
+		res.x = parseSize(defWidth, parentSize.x)
 	if defHeight != None:
-		res.y = parseSize(defHeight, HEIGHT)
+		res.y = parseSize(defHeight, parentSize.y)
+
+	# if element.type == "cont":
+	# 	id = element.getAttribute("id")
+	# 	if id == "testcont":
+	# 		with open("testcont.txt", "a") as f:
+	# 			f.write(f"parentSize: {parentSize.x} {parentSize.y}\n")
+	# 			f.write(f"defWidth: {defWidth}\n")
+	# 			f.write(f"defHeight: {defHeight}\n")
+	# 			f.write(f"res: {res.x} {res.y}\n")
+
 	return res
 
 def parseSize(size, MAX) -> int:

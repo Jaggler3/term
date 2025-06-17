@@ -4,8 +4,10 @@ def isInt(string) -> bool:
 def restrict_len(string: str, cap: int) -> str:
 	return string if len(string) <= cap else string[:cap]
 
+# restrict string to cap length
 def rcaplen(string: str, cap: int) -> str:
 	return string if len(string) <= cap else string[len(string) - cap:]
 
+# expand string to cap length
 def expand_len(string: str, cap: int) -> str:
 	return string if len(string) >= cap else string + (" " * (cap - len(string)))
