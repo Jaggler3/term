@@ -124,7 +124,7 @@ setup(
 	},
 	entry_points={
 		'console_scripts': [
-			'term=termbrowser.main:main'
+			'term=termbrowser.app.main:main'
 		],
 	},
 )

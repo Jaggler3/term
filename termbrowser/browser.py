@@ -14,6 +14,8 @@ class Browser:
 		self.context = {}
 		self.debugHistory = "Debugger: Press Alt+K to close.\n"
 		self.debugMode = False
+		self.cursor_index = -1
+		self.scroll = 0
 
 	def start_load(self):
 		if not self.loading:

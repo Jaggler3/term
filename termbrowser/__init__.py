@@ -1,4 +1,7 @@
-import termbrowser.term
+"""
+Term Browser - A terminal-based web browser.
+"""
 
-def main():
-	print("Starting term...")
+from .app import main
+
+__all__ = ['main']
