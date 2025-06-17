@@ -1,0 +1,84 @@
+from ..vector import Vec
+from ..adom import Element
+from .util import getPadding, getDirection, getDefinedSize, parseSize
+from .text_util import getWrapAndSize, getRenderedFont, getLinkText
+
+def getAlignOffset(element: Element, val: str, parentSize: Vec) -> int:
+    if element.type == "link":
+        val = getLinkText(element)
+
+    isBox = element.type == "input"
+
+    align = element.getAttribute("align")
+    defWidth = getDefinedSize(element, parentSize).x
+    preserve_whitespace = element.getAttribute("preserve") == "true" if element.type == "text" else False
+    
+    finalWidth = defWidth if defWidth != -1 else parentSize.x
+    if not isBox:
+        wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x, preserve_whitespace)
+        finalWidth = wrapped["size"].x
+    if align == "center":
+        return round(float(parentSize.x) / 2.0) - round(float(finalWidth) / 2.0)
+    if align == "right":
+        wrapped = getWrapAndSize(val, defWidth if defWidth != -1 else parentSize.x, preserve_whitespace)
+        finalWidth = wrapped["size"].x
+        return parentSize.x - finalWidth
+    return 0
+
+def getElementSize(element: Element, parentSize: Vec) -> Vec:
+    if element.type == "text":
+        widthAttr = element.getAttribute("width")
+        padding = getPadding(element, parentSize.x, parentSize.y)
+        renderWidth = parseSize(widthAttr, parentSize.x - padding['left'] - padding['right']) if widthAttr != None else parentSize.x - padding['left'] - padding['right']
+        preserve_whitespace = element.getAttribute("preserve") == "true"
+        val = getRenderedFont(element.value, preserve_whitespace, element.getAttribute("font"))
+        wrapped_text_size = getWrapAndSize(val, renderWidth, preserve_whitespace)
+        res = wrapped_text_size["size"]
+        res.x += padding['left'] + padding['right']
+        res.y += padding['top'] + padding['bottom']
+        return res
+    elif element.type == "link":
+        widthAttr = element.getAttribute("width")
+        renderWidth = parseSize(widthAttr, parentSize.x) if widthAttr != None else parentSize.x
+        wrapped_text_size = getWrapAndSize(getLinkText(element), renderWidth)
+        return wrapped_text_size["size"]
+    elif element.type == "input":
+        widthAttr = element.getAttribute("width")
+        renderWidth = parseSize(widthAttr, parentSize.x) if widthAttr != None else parentSize.x
+        return Vec(renderWidth, 3)
+    elif element.type == "cont":
+        childrenSize = Vec(0, 0)
+        padding = getPadding(element, parentSize.x, parentSize.y)
+        paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
+        innerSize = parentSize - paddingSize
+        defSize = getDefinedSize(element, parentSize)
+        hasDefWidth = defSize.x != -1
+        hasDefHeight = defSize.y != -1
+        borderType = element.getAttribute("border")
+
+        for child in element.children:
+            singleSize = getElementSize(
+                child,
+                innerSize
+            )
+            direction = getDirection(element)
+            if direction == "row":
+                childrenSize.x += singleSize.x
+                childrenSize.y = max(childrenSize.y, singleSize.y)
+            elif direction == "column":
+                childrenSize.y += singleSize.y
+                childrenSize.x = max(childrenSize.x, singleSize.x)
+
+        res = Vec(
+            defSize.x if hasDefWidth else childrenSize.x + paddingSize.x,
+            defSize.y if hasDefHeight else childrenSize.y + paddingSize.y
+        )
+
+        # enforce box-sizing
+        if borderType != None:
+            res.add(-2 if hasDefWidth else 0, -2 if hasDefHeight else 0)
+
+        return res
+    elif element.type == "br":
+        return Vec(1, 1)
+    return None 

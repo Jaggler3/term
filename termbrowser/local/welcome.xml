@@ -13,6 +13,32 @@
       <input icon="\u2315" width="100pc" submit="search"></input>
     </container>
   </container>
+  <table>
+    <row>
+      <cell>
+        <text>
+          header 1
+        </text>
+      </cell>
+      <cell>
+        <text>
+          header 2
+        </text>
+      </cell>
+    </row>
+    <row>
+      <cell>
+        <text>
+          row 1
+        </text>
+      </cell>
+      <cell>
+        <text>
+          row 2
+        </text>
+      </cell>
+    </row>  
+  </table>
   <action name="search">
     visit("http://localhost:3000/search?q=" + encode(value))
   </action>
