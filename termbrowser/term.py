@@ -246,14 +246,14 @@ def render() -> None:
 	window.disable_cursor()
 
 def update() -> None:
-	"""Update game state."""
+	"""Update state."""
 	global window, user_input
 	if window.exiting:
 		sys.exit(0)
 	user_input = ""
 
 def lifecycle() -> None:
-	"""Main game loop."""
+	"""Main loop."""
 	global window, special_keys_input_thread_handle, browser
 	if not window or not browser:
 		return
