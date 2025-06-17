@@ -3,6 +3,7 @@ import requests as requests
 from time import sleep
 import simpleeval
 from urllib.parse import quote
+import threading
 
 import termbrowser.adom
 
@@ -17,12 +18,22 @@ class Browser:
 		self.cursor_index = -1
 		self.scroll = 0
 		self.document.focus = -1  # Initialize focus to -1 (no focus)
+		self.load_thread = None
 
 	def start_load(self):
 		if not self.loading:
 			return
+		if self.load_thread and self.load_thread.is_alive():
+			return
+		
+		self.load_thread = threading.Thread(target=self._load_url)
+		self.load_thread.daemon = True
+		self.load_thread.start()
+
+	def _load_url(self):
 		self.evaluator = self.createEvaluator() # reset evaluator before new page is loaded
 		self.document = loadFromURL(self.URL, self)
+		sleep(.2)  # Add a small delay to ensure loading indicator is visible
 		self.loading = False
 		self.document.call_document_action("start", {})
 		# Reset focus state
