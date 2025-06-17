@@ -47,7 +47,9 @@ class Document:
         next_index = self.focus + 1 if self.focus != URL_BAR_INDEX else 0 # skip -1 (no focus)
         if next_index >= len(focusList):
             next_index = 0
-        focusList[next_index].focused = True
+        element = focusList[next_index]
+        element.focused = True
+        element.focus_cursor_index = len(element.value)
         self.focus = next_index
 
     def get_focused_element(self):

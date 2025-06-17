@@ -1,4 +1,3 @@
-import sys, traceback
 import os
 import requests as requests
 from time import sleep

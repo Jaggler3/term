@@ -1,5 +1,6 @@
 from typing import List
 from art import text2art
+import ast
 
 from ..adom.constants import COLORS_PAIRS_REVERSE
 from ..adom import Document, Element
@@ -278,6 +279,7 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 				res.rows[renderY] = res.rows[renderY][0:startPos] + rowText + res.rows[renderY][endPos:]
 
 	elif element.type == "input":
+		icon = element.getAttribute("icon")
 		defSize = getDefinedSize(element, WIDTH, HEIGHT)
 		calcWidth = defSize.x if defSize.x != -1 else DEFAULT_INPUT_WIDTH
 		renderCursor = "\N{FULL BLOCK}" if element.focused else ""
@@ -292,6 +294,11 @@ def renderElement(element: Element, x: int, y: int, WIDTH: int, HEIGHT: int, res
 			),
 			calcWidth
 		)
+		
+		# add icon if it exists
+		if icon != None:
+			icon = ast.literal_eval(f"'{icon}'")
+			toRender = f" {icon} {toRender}"
 
 		toRenderLength = len(toRender)
 

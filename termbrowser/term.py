@@ -2,6 +2,7 @@
 
 # interpret args
 import argparse
+import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("--url", help="the URL you would like to visit")
 args = parser.parse_args()
@@ -13,6 +14,7 @@ import curses
 import threading
 import time
 import pyperclip
+import signal
 
 from .adom import Document, Element
 from .browser import *
@@ -25,6 +27,9 @@ window: Window = Window(curses.initscr())
 curses.start_color()
 
 browser: Browser = Browser(INIT_URL if INIT_URL != None else "term://welcome")
+
+prev_resize_count = 0
+resize_count = 0
 
 user_input = None
 special_keys_input_thread_handle = None
@@ -47,20 +52,33 @@ colormap = {
 	8: curses.COLOR_CYAN,
 }
 
-def setup(screen):
+def setup(screen: curses.window):
+	global window, resize_count, prev_resize_count, browser
+	window = Window(screen)
+	resize_count = 0
+	prev_resize_count = 0
+
+	# def resize_handler(signum, frame):
+	# 	browser.debugHistory += f"Resized: {resize_count}\n"
+	# 	window.resize()
+	# 	curses.resizeterm(*screen.getmaxyx())
+	# 	resize_count += 1
+
+	# signal.signal(signal.SIGWINCH, resize_handler)
+
 	# loop through all colors and create a pair for each
 	for background in range(1, 9):
 		for foreground in range(1, 9):
-			# key is `{background}{foreground}` so blue/red would be 34
+			# key is `{background}{foreground}`
 			key = background * 10 + foreground
 			curses.init_pair(key, colormap[foreground], colormap[background])
 
 	curses.set_escdelay(25)  # Reduce ESC delay to 25ms
-	window = Window(screen)
+
 	lifecycle()
 
 def lifecycle():
-	global window, text_input_thread_handle, special_keys_input_thread_handle
+	global window, text_input_thread_handle, special_keys_input_thread_handle, prev_resize_count, resize_count, browser
 
 	# text_input_thread_handle = threading.Thread(name="daemon", target=text_input_thread, args=())
 	# text_input_thread_handle.setDaemon(True)
@@ -75,8 +93,11 @@ def lifecycle():
 	while True:
 		try:
 			resized = window.get_resized()
+			# if resize_count != prev_resize_count:
 			if resized:
 				window.resize()
+				browser.debugHistory += f"Resized: {resize_count}\n"
+				prev_resize_count = resize_count
 				continue
 			update()
 			render()

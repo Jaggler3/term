@@ -21,10 +21,8 @@ python3 -m termbrowser
 ```
 
 ## Development
-Install dependencies
-```bash
-pip3 install -r requirements.txt
-```
+Look at the Makefile for local development scripts.
+
 
 Open links using their hotkeys ex. 1 for `[1] Link Name`.
 
