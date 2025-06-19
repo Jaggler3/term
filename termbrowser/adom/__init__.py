@@ -4,9 +4,9 @@ This module provides classes and functions for working with term documents.
 """
 
 # Import main classes and functions that should be available when importing adom
-from .elements import Action, Attribute, Element, DocumentLink, createTextElement
+from .elements import Action, Attribute, Element, createTextElement
 from .document import Document
-from .parsers import term2doc, xml2doc
+from .parsers import xml2doc
 from .constants import URL_BAR_INDEX, elementTypes, validFormats
 from .utils import get_all_elements, getTop, digestDeclaration, digestAttribute
 
@@ -15,10 +15,8 @@ __all__ = [
     'Action',
     'Attribute', 
     'Element',
-    'DocumentLink',
     'createTextElement',
     'Document',
-    'term2doc',
     'xml2doc',
     'URL_BAR_INDEX',
     'elementTypes',

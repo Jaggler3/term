@@ -2,7 +2,7 @@ import os
 import requests as requests
 from time import sleep
 import simpleeval
-from urllib.parse import quote
+from urllib.parse import quote, urlparse, parse_qs
 import threading
 
 import termbrowser.adom
@@ -36,6 +36,7 @@ class Browser:
 		sleep(.2)  # Add a small delay to ensure loading indicator is visible
 		self.loading = False
 		self.document.call_document_action("start", {})
+		self.document.call_document_action("redirect", {})
 		# Reset focus state
 		self.document.unfocus()
 		self.cursor_index = -1
@@ -75,8 +76,24 @@ class Browser:
 		else:
 			return "None"
 
+	def setvalue(self, name: str, value: str):
+		for element in self.document.elements:
+			found = element.find_element_by_id(name)
+			if found:
+				found.value = value
+				break
+
 	def encode(self, text: str):
 		return quote(text)
+
+	def geturlparam(self, param: str):
+		"""Extract a URL parameter from the current URL."""
+		try:
+			parsed = urlparse(self.URL)
+			params = parse_qs(parsed.query)
+			return params.get(param, [None])[0]
+		except:
+			return None
 
 	def debug(self, text: str):
 		self.debugHistory += text + "\n"
@@ -91,7 +108,9 @@ class Browser:
 			"var": self.var,
 			"action": self.action,
 			"encode": self.encode,
-			"debug": self.debug
+			"debug": self.debug,
+			"geturlparam": self.geturlparam,
+			"setvalue": self.setvalue
 		}
 
 	def focus_url_bar(self) -> None:

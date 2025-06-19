@@ -4,7 +4,7 @@
       <!-- <link width="15" key="1" background="cyan" foreground="black" url="term://settings">Settings</link>
       <br/>
       <br/> -->
-      <link width="15" key="1" background="cyan" foreground="black" url="term://exit">Exit</link>
+      <link width="15" key="e" background="cyan" foreground="black" url="term://exit">Exit</link>
     </container>
     <container width="60pc">
       <text align="center" font="standard" padding-bottom="5">

@@ -40,14 +40,17 @@ class Element:
     def appendChild(self, child):
         self.children.append(child)
 
+    def find_element_by_id(self, id: str):
+        if self.getAttribute("id") == id:
+            return self
+        for child in self.children:
+            result = child.find_element_by_id(id)
+            if result is not None:
+                return result
+        return None
+
 
 def createTextElement(value):
     t = Element("text")
     t.value = value
     return t
-
-
-class DocumentLink:
-    def __init__(self, key: chr, URL: str):
-        self.key = key
-        self.URL = URL 

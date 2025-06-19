@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 from typing import List
 import simpleeval
 
-from .elements import Element, Action, DocumentLink, createTextElement
+from .elements import Element, Action, createTextElement
 from .utils import get_all_elements
 from .constants import URL_BAR_INDEX
 
@@ -16,9 +16,9 @@ from .constants import URL_BAR_INDEX
 class Document:
     def __init__(self, browser: 'Browser'):
         self.browser = browser
-        self.links = []
-        self.elements = []
-        self.actions = []
+        self.links: List[Element] = []
+        self.elements: List[Element] = []
+        self.actions: List[Action] = []
         self.focus = -1
         self.hasInputs = False
         self.background = "black"
@@ -103,15 +103,18 @@ class Document:
         self.unfocus()
         self.focus = URL_BAR_INDEX
 
-    def add_link(self, key: str, URL: str):
-        if int(key) < 0 or int(key) > 9:
+    def add_link(self, element: Element):
+        key = element.getAttribute("key")
+        if key == None:
             return
-        self.links.append(DocumentLink(ord(key), URL))
+        if key.isdigit() and (int(key) < 0 or int(key) > 9):
+            return
+        self.links.append(element)
 
     def find_link(self, key: int):
         index = 0
         for link in self.links:
-            if link.key == key:
+            if ord(link.getAttribute("key")) == key:
                 return index
             index += 1
         return -1

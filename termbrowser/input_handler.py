@@ -44,10 +44,15 @@ class InputHandler:
             elif self.browser.document.focus == -1:
                 self._handle_special_keys()
                 # Handle link navigation
-                if self.browser.document.find_link(self.user_input) != -1:
-                    self.window.exiting = self.browser.open_link(
-                        self.browser.document.links[self.browser.document.find_link(self.user_input)].URL
-                    )
+                found_index = self.browser.document.find_link(self.user_input)
+                if found_index != -1:
+                    found_link = self.browser.document.links[found_index]
+                    url = found_link.getAttribute("url")
+                    submit = found_link.getAttribute("submit")
+                    if url:
+                        self.window.exiting = self.browser.open_link(url)
+                    elif submit:
+                        self.browser.document.call_action(submit, {})
 
             self.browser.scroll = max(0, min(self.browser.scroll, self.browser.document_size.y - self.window.HEIGHT))
 
@@ -76,8 +81,6 @@ class InputHandler:
 
     def _handle_url_input(self, char: str) -> None:
         """Handle input when URL bar is focused."""
-        # Debug log
-        self.browser.debug(f"URL input: {char} (ord: {ord(char)})")
         
         if char == chr(226):  # alt + v
             to_insert = remove_spacing(pyperclip.paste())
@@ -126,3 +129,5 @@ class InputHandler:
             self.browser.document.unfocus()
         elif char == chr(197):  # Alt + Q
             self.browser.document.unfocus() 
+        elif char == chr(9):  # tab to go to next focus
+            self.browser.document.focus_next()

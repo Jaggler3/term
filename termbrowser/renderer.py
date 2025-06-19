@@ -8,7 +8,7 @@ from typing import Tuple, List
 from .browser import Browser
 from .window import Window
 from .rendering.render import renderDocument, renderDebugger
-from .util import expand_len, restrict_len, remove_spacing
+from .util import expand_len, restrict_len, remove_spacing, rcaplen
 from .pieces import get_pieces
 from .config import (
     URL_CURSOR,
@@ -44,8 +44,10 @@ class Renderer:
             else self.browser.URL
         )
         
+        # Use rcaplen to show the rightmost portion when text is too long
+        # This allows the cursor to scroll into view when it's beyond the visible area
         render_url = expand_len(
-            restrict_len(draw_cursor, render_url_length),
+            rcaplen(draw_cursor, render_url_length),
             render_url_length
         )
         
