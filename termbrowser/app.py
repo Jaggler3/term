@@ -22,6 +22,7 @@ class TerminalBrowser:
         self.input_handler: Optional[InputHandler] = None
         self.renderer: Optional[Renderer] = None
         self.initial_url = initial_url or "term://welcome"
+        self.force_render = False
 
     def setup(self, screen: curses.window) -> None:
         """Initialize the terminal browser."""
@@ -49,10 +50,17 @@ class TerminalBrowser:
             try:
                 if self.window.get_resized():
                     self.window.resize()
+                    self.force_render = True  # Force a re-render after resize
                     continue
 
                 self._update()
-                self.renderer.render()
+                
+                # Always render if force_render is True, otherwise normal render check
+                if self.force_render:
+                    self.renderer.render(force=True)
+                    self.force_render = False
+                else:
+                    self.renderer.render()
                 
                 if self.browser.loading:
                     self.browser.start_load()

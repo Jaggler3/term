@@ -11,7 +11,6 @@ COLORS_PAIRS = {
 	6: "yellow",
 	7: "magenta",
   8: "cyan",
-  9: "gray",
 }
 
 COLORS_PAIRS_REVERSE = {
@@ -23,7 +22,6 @@ COLORS_PAIRS_REVERSE = {
 	"yellow": 6,
 	"magenta": 7,
   "cyan": 8,
-  "gray": 9,
 }
 
 elementTypes = [
