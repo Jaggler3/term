@@ -44,8 +44,16 @@ def getElementSize(element: Element, parentSize: Vec) -> Vec:
         return wrapped_text_size["size"]
     elif element.type == "input":
         widthAttr = element.getAttribute("width")
+        lines_attr = element.getAttribute("lines")
+        lines = int(lines_attr) if lines_attr else 1
         renderWidth = parseSize(widthAttr, parentSize.x) if widthAttr != None else parentSize.x
-        return Vec(renderWidth, 3)
+        
+        if lines > 1:
+            # Multi-line input: height is lines + 2 for borders
+            return Vec(renderWidth, lines + 2)
+        else:
+            # Single line input: height is 3 (original behavior)
+            return Vec(renderWidth, 3)
     elif element.type == "cont":
         childrenSize = Vec(0, 0)
         padding = getPadding(element, parentSize.x, parentSize.y)

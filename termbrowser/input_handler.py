@@ -110,21 +110,107 @@ class InputHandler:
             return
 
         old_index = focused_element.focus_cursor_index
+        lines_attr = focused_element.getAttribute("lines")
+        lines = int(lines_attr) if lines_attr else 1
         
         if char == chr(260):  # left arrow
             focused_element.focus_cursor_index = max(0, old_index - 1)
         elif char == chr(261):  # right arrow
             focused_element.focus_cursor_index = min(len(focused_element.value), old_index + 1)
+        elif char == chr(258):  # down arrow
+            if lines > 1:
+                # Move cursor down one line
+                val_lines = focused_element.value.split('\n') if focused_element.value else ['']
+                current_pos = 0
+                cursor_line = 0
+                cursor_col = 0
+                
+                # Find current line and column
+                for i, line in enumerate(val_lines):
+                    if current_pos + len(line) >= old_index:
+                        cursor_line = i
+                        cursor_col = old_index - current_pos
+                        break
+                    current_pos += len(line) + 1  # +1 for newline
+                else:
+                    cursor_line = len(val_lines) - 1
+                    cursor_col = len(val_lines[cursor_line])
+                
+                # Move to next line if possible
+                if cursor_line < len(val_lines) - 1:
+                    next_line = val_lines[cursor_line + 1]
+                    new_col = min(cursor_col, len(next_line))
+                    # Calculate new position
+                    new_pos = 0
+                    for i in range(cursor_line + 1):
+                        new_pos += len(val_lines[i]) + 1
+                    new_pos += new_col
+                    focused_element.focus_cursor_index = new_pos
+        elif char == chr(259):  # up arrow
+            if lines > 1:
+                # Move cursor up one line
+                val_lines = focused_element.value.split('\n') if focused_element.value else ['']
+                current_pos = 0
+                cursor_line = 0
+                cursor_col = 0
+                
+                # Find current line and column
+                for i, line in enumerate(val_lines):
+                    if current_pos + len(line) >= old_index:
+                        cursor_line = i
+                        cursor_col = old_index - current_pos
+                        break
+                    current_pos += len(line) + 1  # +1 for newline
+                else:
+                    cursor_line = len(val_lines) - 1
+                    cursor_col = len(val_lines[cursor_line])
+                
+                # Move to previous line if possible
+                if cursor_line > 0:
+                    prev_line = val_lines[cursor_line - 1]
+                    new_col = min(cursor_col, len(prev_line))
+                    # Calculate new position
+                    new_pos = 0
+                    for i in range(cursor_line - 1):
+                        new_pos += len(val_lines[i]) + 1
+                    new_pos += new_col
+                    focused_element.focus_cursor_index = new_pos
+        elif char == chr(10):  # Enter key
+            if lines > 1:
+                # Insert newline at cursor position for multi-line inputs
+                focused_element.value = focused_element.value[:old_index] + '\n' + focused_element.value[old_index:]
+                focused_element.focus_cursor_index += 1
+                self.browser.document.change(focused_element)
+            else:
+                # Submit for single line inputs
+                self.browser.document.submit(focused_element)
         elif char in VALID_INPUT_CHARS:
+            # Regular character input
             focused_element.value = focused_element.value[:old_index] + char + focused_element.value[old_index:]
             focused_element.focus_cursor_index += 1
             self.browser.document.change(focused_element)
         elif char == chr(127):  # backspace
             if focused_element.value and old_index > 0:
-                focused_element.value = focused_element.value[:old_index - 1] + focused_element.value[old_index:]
-                focused_element.focus_cursor_index -= 1
-        elif char == chr(10):  # enter
-            self.browser.document.submit(focused_element)
+                # Check if we're deleting a newline
+                if old_index > 0 and focused_element.value[old_index - 1] == '\n':
+                    # Merge lines when deleting newline
+                    lines_before = focused_element.value[:old_index - 1].split('\n')
+                    lines_after = focused_element.value[old_index:].split('\n')
+                    
+                    if len(lines_before) > 1 and len(lines_after) > 0:
+                        # Merge the last line before with the first line after
+                        merged_line = lines_before[-1] + lines_after[0]
+                        new_value = '\n'.join(lines_before[:-1]) + '\n' + merged_line + '\n'.join(lines_after[1:])
+                        focused_element.value = new_value
+                        focused_element.focus_cursor_index = old_index - 1
+                    else:
+                        # Simple newline deletion
+                        focused_element.value = focused_element.value[:old_index - 1] + focused_element.value[old_index:]
+                        focused_element.focus_cursor_index -= 1
+                else:
+                    # Regular backspace
+                    focused_element.value = focused_element.value[:old_index - 1] + focused_element.value[old_index:]
+                    focused_element.focus_cursor_index -= 1
         elif char == chr(27):  # esc
             self.browser.document.unfocus()
         elif char == chr(197):  # Alt + Q

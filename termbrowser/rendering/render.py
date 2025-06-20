@@ -103,11 +103,18 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 		padding = getPadding(element, parentSize.x, parentSize.y)
 		direction = getDirection(element)
 		borderType = element.getAttribute("border")
-		initialOffset = Vec(padding['left'], padding['top'])
+		
 		writeSize = getElementSize(element, parentSize)
-
+		
+		paddingSize = Vec(padding['left'] + padding['right'], padding['top'] + padding['bottom'])
+		innerSize = writeSize - paddingSize
+		
+		initialOffset = Vec(padding['left'], padding['top'])
 		if borderType != None:
-			initialOffset.add(1, 1)
+			initialOffset.x += 1
+			initialOffset.y += 1
+			innerSize.x -= 2
+			innerSize.y -= 2
 
 		offset = cloneVec(initialOffset)
 
@@ -118,7 +125,7 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 
 		# render children with clamp, calculated pc
 		for child in element.children:
-			singleSize = renderElement(child, x + offset.x, y + offset.y, SCREEN_WIDTH, SCREEN_HEIGHT, res, styles, writeSize)
+			singleSize = renderElement(child, x + offset.x, y + offset.y, SCREEN_WIDTH, SCREEN_HEIGHT, res, styles, innerSize)
 
 			if direction == "row":
 				offset.x += singleSize.x
@@ -216,42 +223,144 @@ def renderElement(element: Element, x: int, y: int, SCREEN_WIDTH: int, SCREEN_HE
 
 	elif element.type == "input":
 		icon = element.getAttribute("icon")
+		mask = element.getAttribute("mask")
+		lines_attr = element.getAttribute("lines")
+		lines = int(lines_attr) if lines_attr else 1
+		
 		calculatedSize = getElementSize(element, parentSize)
-		calcWidth = calculatedSize.x if calculatedSize.x != -1 else DEFAULT_INPUT_WIDTH
+		calcWidth = calculatedSize.x
 		renderCursor = "\N{FULL BLOCK}" if element.focused else ""
 		val = element.value
 		idx = element.focus_cursor_index
-		draw_cursor_end = val[idx + 1:] if idx < len(val) and idx != -1 else ""
-		draw_cursor = val[:idx] + renderCursor + draw_cursor_end
-
-		innerWidth = calcWidth - 2 # account for border
-		if icon != None:
-			innerWidth -= 3 # account for icon
-
-		toRender = rcaplen(
-			expand_len(
-				draw_cursor if idx != -1 else val,
-				innerWidth
-			),
-			innerWidth
-		)
 		
-		# add icon if it exists
-		if icon != None:
-			icon = ast.literal_eval(f"'{icon}'")
-			toRender = f" {icon} {toRender}"
+		# Handle multi-line input
+		if lines > 1:
+			# Split value into lines
+			val_lines = val.split('\n') if val else ['']
+			
+			# Calculate cursor position across lines
+			current_pos = 0
+			cursor_line = 0
+			cursor_col = 0
+			for i, line in enumerate(val_lines):
+				if current_pos + len(line) >= idx:
+					cursor_line = i
+					cursor_col = idx - current_pos
+					break
+				current_pos += len(line) + 1  # +1 for newline
+			else:
+				# Cursor is at the end
+				cursor_line = len(val_lines) - 1
+				cursor_col = len(val_lines[cursor_line])
+			
+			# Calculate which lines to display (scrolling)
+			start_line = max(0, cursor_line - lines + 1) if cursor_line >= lines else 0
+			end_line = min(len(val_lines), start_line + lines)
+			
+			# Get the lines to display
+			display_lines = val_lines[start_line:end_line]
+			
+			# Pad with empty lines if needed
+			while len(display_lines) < lines:
+				display_lines.append('')
+			
+			# Adjust cursor line for display
+			display_cursor_line = cursor_line - start_line
+			
+			# Apply mask if specified
+			if mask:
+				display_lines = [mask * len(line) for line in display_lines]
+			
+			# Render each line
+			innerWidth = calcWidth - 2  # account for border
+			if icon != None:
+				innerWidth -= 3  # account for icon
+			
+			alignOffset = getAlignOffset(element, " " * innerWidth, parentSize)
+			borderType = "dotted thick" if element.focused else "dotted thin"
+			
+			writeSize = Vec(innerWidth, lines)
+			
+			# Render border
+			renderBorder(borderType, Vec(x, y), writeSize, res)
 
-		toRenderLength = len(toRender)
+			# Clear the inside of the input area before rendering text
+			for i in range(lines):
+				renderY = y + 1 + i
+				start_pos = x + alignOffset + 1
+				# Ensure we don't write past the screen width
+				clear_width = min(innerWidth, SCREEN_WIDTH - start_pos)
+				if renderY < SCREEN_HEIGHT and start_pos < SCREEN_WIDTH and clear_width > 0:
+					res.rows[renderY] = res.rows[renderY][:start_pos] + ' ' * clear_width + res.rows[renderY][start_pos + clear_width:]
+			
+			# Render each line
+			for line_idx in range(lines):
+				line_text = display_lines[line_idx] if line_idx < len(display_lines) else ""
+				
+				# Add cursor if this is the focused line and element is focused
+				if element.focused and line_idx == display_cursor_line:
+					if cursor_col <= len(line_text):
+						line_text = line_text[:cursor_col] + renderCursor + line_text[cursor_col:]
+					else:
+						line_text = line_text + renderCursor
+				
+				# Truncate and pad line to fit width
+				toRender = rcaplen(
+					expand_len(line_text, innerWidth),
+					innerWidth
+				)
+				
+				# Add icon to first line if it exists
+				if icon != None and line_idx == 0:
+					icon_char = ast.literal_eval(f"'{icon}'")
+					toRender = f" {icon_char} {toRender}"
+				
+				startPos = x + alignOffset + 1
+				renderY = y + 1 + line_idx
+				if renderY < len(res.rows) and renderY >= 0:
+					res.rows[renderY] = res.rows[renderY][0:startPos] + toRender + res.rows[renderY][startPos + len(toRender):]
 
-		alignOffset = getAlignOffset(element, toRender, parentSize)
+		else:
+			# Single line input (original logic)
+			# Apply mask if specified
+			if mask and val:
+				# Replace each character with the mask character, but preserve cursor position
+				masked_val = mask * len(val)
+				draw_cursor_end = masked_val[idx + 1:] if idx < len(masked_val) and idx != -1 else ""
+				draw_cursor = masked_val[:idx] + renderCursor + draw_cursor_end
+			else:
+				# No mask, use original value
+				draw_cursor_end = val[idx + 1:] if idx < len(val) and idx != -1 else ""
+				draw_cursor = val[:idx] + renderCursor + draw_cursor_end
 
-		borderType = "dotted thick" if element.focused else "dotted thin"
-		renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
-		writeSize = Vec(toRenderLength + 2, 3)
-		startPos = x + alignOffset + 1
-		renderY = y + 1
-		if renderY < len(res.rows) and renderY >= 0:
-			res.rows[renderY] = res.rows[renderY][0:startPos] + toRender + res.rows[renderY][startPos + toRenderLength:]
+			innerWidth = calcWidth - 2 # account for border
+			if icon != None:
+				innerWidth -= 3 # account for icon
+
+			toRender = rcaplen(
+				expand_len(
+					draw_cursor if idx != -1 else (mask * len(val) if mask and val else val),
+					innerWidth
+				),
+				innerWidth
+			)
+			
+			# add icon if it exists
+			if icon != None:
+				icon = ast.literal_eval(f"'{icon}'")
+				toRender = f" {icon} {toRender}"
+
+			toRenderLength = len(toRender)
+
+			alignOffset = getAlignOffset(element, toRender, parentSize)
+
+			borderType = "dotted thick" if element.focused else "dotted thin"
+			renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
+			writeSize = Vec(toRenderLength + 2, 3)
+			startPos = x + alignOffset + 1
+			renderY = y + 1
+			if renderY < len(res.rows) and renderY >= 0:
+				res.rows[renderY] = res.rows[renderY][0:startPos] + toRender + res.rows[renderY][startPos + toRenderLength:]
 
 	elif element.type == "br":
 		writeSize = Vec(1, 1)
