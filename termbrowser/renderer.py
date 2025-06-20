@@ -9,7 +9,7 @@ from collections import defaultdict
 from .browser import Browser
 from .window import Window
 from .rendering.render import renderDocument, renderDebugger
-from .util import expand_len, restrict_len, remove_spacing, rcaplen
+from .util import expand_len, restrict_len, remove_spacing, rcaplen, cursor_centered_text
 from .pieces import get_pieces
 from .config import (
     URL_CURSOR,
@@ -97,11 +97,21 @@ class Renderer:
             else self.browser.URL
         )
         
-        # Use rcaplen to show the rightmost portion when text is too long
-        render_url = expand_len(
-            rcaplen(draw_cursor, render_url_length),
-            render_url_length
-        )
+        # Choose display method based on whether we're editing
+        if self.browser.document.focus == -2 and self.browser.cursor_index >= 0:
+            # When editing, center around cursor position
+            # Account for the URL_CURSOR character in the cursor position
+            cursor_pos_with_marker = self.browser.cursor_index + len(URL_CURSOR)
+            render_url = expand_len(
+                cursor_centered_text(draw_cursor, cursor_pos_with_marker, render_url_length),
+                render_url_length
+            )
+        else:
+            # When not editing, show rightmost portion
+            render_url = expand_len(
+                rcaplen(draw_cursor, render_url_length),
+                render_url_length
+            )
         
         # Render URL with styles
         self.window.render(
