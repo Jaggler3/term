@@ -330,7 +330,7 @@ Use `geturlparam()` to extract parameters from the current URL:
       var("username", value)
     </action>
     <action name="do_login">
-      visit("http://localhost:3000/auth/login?username=" + encode(getvar("username")) + "&password=" + encode(value))
+      visit("http://localhost:3000/auth/login?username=" + encode(getvar("username")) + "&amp;password=" + encode(value))
     </action>
   </container>
 </piko>
@@ -354,7 +354,7 @@ Use `geturlparam()` to extract parameters from the current URL:
       var("content", value)
     </action>
     <action name="save_document">
-      visit("http://localhost:3000/save?title=" + encode(getvar("title")) + "&content=" + encode(getvar("content")))
+      visit("http://localhost:3000/save?title=" + encode(getvar("title")) + "&amp;content=" + encode(getvar("content")))
     </action>
   </container>
 </piko>
