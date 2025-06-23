@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from termbrowser.browser import Browser
+    from piko.browser import Browser
 
 from typing import List
 import simpleeval

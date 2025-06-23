@@ -1,5 +1,5 @@
 """
-Term Browser - A terminal-based web browser.
+Piko Browser - A terminal-based web browser.
 """
 
 from .app import main

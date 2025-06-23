@@ -1,14 +1,14 @@
-<term type="m100_xml">
+<piko type="m100_xml">
   <container direction="row" width="100pc" background="black" foreground="white" padding-top="3">
     <container padding-left="2pc" width="18pc">
-      <!-- <link width="15" key="1" background="cyan" foreground="black" url="term://settings">Settings</link>
+      <!-- <link width="15" key="1" background="cyan" foreground="black" url="piko://settings">Settings</link>
       <br/>
       <br/> -->
-      <link width="15" key="e" background="cyan" foreground="black" url="term://exit">Exit</link>
+      <link width="15" key="e" background="cyan" foreground="black" url="piko://exit">Exit</link>
     </container>
     <container width="60pc">
       <text align="center" font="small" padding-bottom="5">
-        Term
+        Piko
       </text>
       <input icon="\u2315" width="100pc" submit="search"></input>
     </container>
@@ -57,4 +57,4 @@
   <action name="search">
     visit("https://term-search-production.up.railway.app/search?q=" + encode(value))
   </action>
-</term>
+</piko>

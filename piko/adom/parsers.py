@@ -19,13 +19,13 @@ def xml2doc(contents, browser):
     except ET.ParseError as e:
         return _crashDoc(f"XML Parse Error: {str(e)}", 0, browser)
     
-    # Check if it's a valid term XML file
-    if root.tag != "term":
-        return _crashDoc("XML file must have a <term> root element", 0, browser)
+    # Check if it's a valid piko XML file
+    if root.tag != "piko":
+        return _crashDoc("XML file must have a <piko> root element", 0, browser)
     
-    term_type = root.get("type")
-    if term_type not in ["m100_xml"]:
-        return _crashDoc(f"Unsupported term type: {term_type}", 0, browser)
+    piko_type = root.get("type")
+    if piko_type not in ["m100_xml"]:
+        return _crashDoc(f"Unsupported piko type: {piko_type}", 0, browser)
     
     # background and foreground colors
     background_color = root.get("background")
@@ -76,7 +76,7 @@ def _xml_element_to_adom(xml_element: ET.Element, document: Document):
     
     # Convert XML attributes to ADOM attributes  
     for attr_name, attr_value in xml_element.attrib.items():
-        # Convert some XML attribute names to match the term format
+        # Convert some XML attribute names to match the piko format
         if attr_name == "padding-top":
             element.setAttribute("padding-top", attr_value)
         elif attr_name == "padding-bottom":

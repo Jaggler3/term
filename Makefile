@@ -5,10 +5,10 @@ install:
 	pip install -e .
 
 run:
-	term
+	piko
 	
 dev:
-	python watch.py watchmedo auto-restart --directory=./termbrowser --pattern="*.py" --recursive -- term
+	python watch.py watchmedo auto-restart --directory=./piko --pattern="*.py" --recursive -- piko
 
 clean:
 	find . -type f -name '*.pyc' -delete

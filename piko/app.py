@@ -21,7 +21,7 @@ class TerminalBrowser:
         self.browser: Optional[Browser] = None
         self.input_handler: Optional[InputHandler] = None
         self.renderer: Optional[Renderer] = None
-        self.initial_url = initial_url or "term://welcome"
+        self.initial_url = initial_url or "piko://welcome"
         self.force_render = False
 
     def setup(self, screen: curses.window) -> None:

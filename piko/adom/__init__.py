@@ -1,6 +1,6 @@
 """ADOM (Abstract Document Object Model) module.
 
-This module provides classes and functions for working with term documents.
+This module provides classes and functions for working with piko documents.
 """
 
 # Import main classes and functions that should be available when importing adom

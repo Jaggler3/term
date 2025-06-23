@@ -5,11 +5,11 @@ import simpleeval
 from urllib.parse import quote, urlparse, parse_qs, urljoin
 import threading
 
-import termbrowser.adom
+import piko.adom
 
 class Browser:
 	def __init__(self, initialURL: str):
-		self.document = termbrowser.adom.Document(self)
+		self.document = piko.adom.Document(self)
 		self.URL = initialURL
 		self.loading = True
 		self.context = {}
@@ -55,14 +55,14 @@ class Browser:
 	
 	# returns if the browser should exit
 	def open_link(self, URL: str) -> bool:
-		if URL != "term://exit":
-			if URL.startswith("term://") and not self.URL.startswith("term://"):
-				self.document = termbrowser.adom.Document(self)
-				self.document.elements.append(termbrowser.adom.createTextElement("Can not open term:// links. Only Term can open these links."))
+		if URL != "piko://exit":
+			if URL.startswith("piko://") and not self.URL.startswith("piko://"):
+				self.document = piko.adom.Document(self)
+				self.document.elements.append(piko.adom.createTextElement("Can not open piko:// links. Only Piko can open these links."))
 				self.document.browser.scroll = 0
 			else:
 				# Handle relative paths by resolving them against the current URL
-				if not URL.startswith(('http://', 'https://', 'term://')):
+				if not URL.startswith(('http://', 'https://', 'piko://')):
 					# Resolve relative URL against current URL
 					self.URL = urljoin(self.URL, URL)
 				else:
@@ -145,42 +145,42 @@ class Browser:
 		self.cursor_index = -1
 
 """
-term:// -> files in the ./local/ folder of the term project
+piko:// -> files in the ./local/ folder of the piko project
 file:// -> files on the user's computer
 http:// & https:// -> files to curl from the internet
 """
 def loadFromURL(URL: str, browser: Browser):
 	if URL == '':
-		return termbrowser.adom.Document(browser).with_message("Error: URL is empty")
+		return piko.adom.Document(browser).with_message("Error: URL is empty")
 	protocol = None
-	protocols = ["term://", "http://", "https://"]
+	protocols = ["piko://", "http://", "https://"]
 	for p in protocols:
 		if URL.startswith(p):
 			protocol = p
 			break
 	if protocol == None:
-		return termbrowser.adom.Document(browser).with_message("Error: Could not determine URL protocol `{}`".format(URL))
-	elif protocol == "term://":
-		file_path = os.path.dirname(os.path.realpath(__file__)) + "/local/" + URL[len("term://"):] + ".xml"
+		return piko.adom.Document(browser).with_message("Error: Could not determine URL protocol `{}`".format(URL))
+	elif protocol == "piko://":
+		file_path = os.path.dirname(os.path.realpath(__file__)) + "/local/" + URL[len("piko://"):] + ".xml"
 		try:
 			stream = open(file_path)
 			res = stream.read()
 			stream.close()
-			return termbrowser.adom.xml2doc(res, browser)
+			return piko.adom.xml2doc(res, browser)
 		except FileNotFoundError:
-			return termbrowser.adom.Document(browser).with_message("Could not load `{}`".format(file_path))
+			return piko.adom.Document(browser).with_message("Could not load `{}`".format(file_path))
 	elif protocol == "https://" or protocol == "http://":
 		sleep(.1)
 		try:
 			return makeRequest(browser, URL)
 		except Exception as e:
 			browser.debug(str(e))
-			return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
+			return piko.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
 
 def makeRequest(browser: Browser, url: str):
 	try:
-		page = requests.get(url, headers={"Content-Type": "Term"}).text
-		return termbrowser.adom.xml2doc(page, browser)
+		page = requests.get(url, headers={"User-Agent": "Piko"}).text
+		return piko.adom.xml2doc(page, browser)
 	except Exception as e:
 		browser.debug(str(e))
-		return termbrowser.adom.Document(browser).with_message("Could not load URL. \n" + str(e))
+		return piko.adom.Document(browser).with_message("Could not load URL. \n" + str(e))

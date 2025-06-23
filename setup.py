@@ -8,8 +8,8 @@ import os
 from setuptools import find_packages, setup
 
 # Package meta-data.
-NAME = 'termbrowser'
-DESCRIPTION = 'Terminal web browser.'
+NAME = 'piko'
+DESCRIPTION = 'Piko browser.'
 URL = 'https://github.com/Jaggler3/term'
 EMAIL = 'martin.protostar@gmail.com'
 AUTHOR = 'Martin Darazs'
@@ -41,7 +41,7 @@ setup(
 	url=URL,
 	packages=find_packages(
 		exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
-	scripts=['bin/term'],
+	scripts=['bin/piko'],
 	install_requires=REQUIRED,
 	extras_require=EXTRAS,
 	include_package_data=True,
@@ -58,7 +58,7 @@ setup(
 	],
 	entry_points={
 		'console_scripts': [
-			'term=termbrowser.app:main'
+			'piko=piko.app:main'
 		],
 	},
 )
