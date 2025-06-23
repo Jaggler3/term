@@ -135,10 +135,8 @@ python3 -m pikobrowser
 
 ### URL Bar
 
-- Press **Escape** twice to focus the URL bar
+- Press **Escape** to focus on the URL bar or lose focus on an input
 - Type a URL and press **Enter** to navigate
-- Use **Alt+V** to paste from clipboard
-- Press **Escape** to unfocus
 
 ### Debug Mode
 
@@ -383,5 +381,3 @@ Use `geturlparam()` to extract parameters from the current URL:
   </table>
 </piko>
 ```
-
-This documentation provides a complete guide for using the Piko browser and creating compatible XML files. 
