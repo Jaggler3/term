@@ -2,7 +2,7 @@ import os
 import requests as requests
 from time import sleep
 import simpleeval
-from urllib.parse import quote, urlparse, parse_qs
+from urllib.parse import quote, urlparse, parse_qs, urljoin
 import threading
 
 import termbrowser.adom
@@ -60,7 +60,12 @@ class Browser:
 				self.document = termbrowser.adom.Document(self)
 				self.document.elements.append(termbrowser.adom.createTextElement("Can not open term:// links. Only Term can open these links."))
 			else:
-				self.URL = URL
+				# Handle relative paths by resolving them against the current URL
+				if not URL.startswith(('http://', 'https://', 'term://')):
+					# Resolve relative URL against current URL
+					self.URL = urljoin(self.URL, URL)
+				else:
+					self.URL = URL
 				self.loading = True
 			return False
 		else:
@@ -111,6 +116,18 @@ class Browser:
 			"debug": self.debug,
 			"geturlparam": self.geturlparam,
 			"setvalue": self.setvalue
+		}
+	
+	def get_global_variables(self):
+		return {
+			"BROWSER_URL": self.URL,
+			"BROWSER_HOST": urlparse(self.URL).netloc,
+			"BROWSER_PATH": urlparse(self.URL).path,
+			"BROWSER_QUERY": urlparse(self.URL).query,
+			"BROWSER_FRAGMENT": urlparse(self.URL).fragment,
+			"BROWSER_SCHEME": urlparse(self.URL).scheme,
+			"BROWSER_USERNAME": urlparse(self.URL).username,
+			"BROWSER_PASSWORD": urlparse(self.URL).password,
 		}
 
 	def focus_url_bar(self) -> None:

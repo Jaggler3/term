@@ -139,7 +139,7 @@ class Document:
         action = self.find_action(name)
         if action == None:
             return
-        self.evaluator.names = args
+        self.evaluator.names = { **args, **self.browser.get_global_variables() }
         self.evaluator.eval("(" + action.code + ")")
 
     def call_element_action(self, element: Element, name: str, args: dict):
@@ -149,14 +149,13 @@ class Document:
         action = self.find_action(actionCall)
         if action == None:
             return
-        self.evaluator.names = args
-        self.evaluator.eval("(" + action.code + ")")
+        self.call_action(actionCall, args)
 
     def call_document_action(self, name: str, args: dict):
         if name == None:
             return
-        action = self.find_action("[" + name + "]")
+        name = "[" + name + "]"
+        action = self.find_action(name)
         if action == None:
             return
-        self.evaluator.names = args
-        self.evaluator.eval("(" + action.code + ")") 
+        self.call_action(name, args)
