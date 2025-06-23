@@ -1,4 +1,5 @@
 from textwrap import TextWrapper
+from typing import Union
 
 from art import text2art
 
@@ -54,7 +55,7 @@ def getWrapAndSize(text: str, maxWidth: int, preserve_whitespace: bool = False):
         return {"text": wrappedText, "size": Vec(longest_line, len(lines))}
 
 
-def getRenderedFont(value: str | None, preserve_whitespace: bool, font: str) -> str:
+def getRenderedFont(value: Union[str, None], preserve_whitespace: bool, font: str) -> str:
     if not value:
         return ""
     if not preserve_whitespace:
