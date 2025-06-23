@@ -1,4 +1,4 @@
 requests
 simpleeval
 pyperclip
-watchdog
+art
