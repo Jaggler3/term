@@ -114,11 +114,13 @@ class Renderer:
             )
         
         # Render URL with styles
+        url_focused = self.browser.document.focus == -2
+        url_style = curses.A_BOLD if url_focused else curses.A_UNDERLINE
         self.window.render(
             render_url,
-            curses.A_UNDERLINE,
-            [2] * len(render_url),
-            [1] * len(render_url)
+            url_style,
+            [1 if url_focused else 2] * len(render_url),
+            [2 if url_focused else 1] * len(render_url)
         )
         
         # Render status indicator

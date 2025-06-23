@@ -59,6 +59,7 @@ class Browser:
 			if URL.startswith("term://") and not self.URL.startswith("term://"):
 				self.document = termbrowser.adom.Document(self)
 				self.document.elements.append(termbrowser.adom.createTextElement("Can not open term:// links. Only Term can open these links."))
+				self.document.browser.scroll = 0
 			else:
 				# Handle relative paths by resolving them against the current URL
 				if not URL.startswith(('http://', 'https://', 'term://')):
@@ -67,6 +68,7 @@ class Browser:
 				else:
 					self.URL = URL
 				self.loading = True
+				self.document.browser.scroll = 0
 			return False
 		else:
 			return True

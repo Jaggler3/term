@@ -91,7 +91,7 @@ class Window:
 		try:
 			y, x = self.buffer.getyx()
 			for i in range(len(string)):
-				pair = partial_backgrounds[i] * 10 + partial_foregrounds[i]
+				pair = self.get_color_combination(partial_backgrounds[i], partial_foregrounds[i])
 				try:
 					self.buffer.addstr(string[i], curses.color_pair(pair) | option)
 				except curses.error:
@@ -103,3 +103,5 @@ class Window:
 			print(f"String: {string}")
 	def disable_cursor(self):
 		curses.curs_set(False)
+	def get_color_combination(self, background: int, foreground: int) -> int:
+		return background * 10 + foreground

@@ -55,6 +55,6 @@
     </row> 
   </table> -->
   <action name="search">
-    visit("http://localhost:3000/search?q=" + encode(value))
+    visit("https://term-search-production.up.railway.app/search?q=" + encode(value))
   </action>
 </term>
