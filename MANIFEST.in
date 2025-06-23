@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include requirements.txt
+include pyproject.toml
+recursive-include piko *.xml
+recursive-include piko *.txt
+recursive-include piko *.md 
