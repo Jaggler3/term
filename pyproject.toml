@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pikobrowser"
-version = "0.2.24"
+version = "0.2.25"
 description = "Piko browser."
 authors = [
     {name = "Martin Darazs", email = "martin.protostar@gmail.com"}
