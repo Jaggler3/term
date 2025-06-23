@@ -39,6 +39,7 @@ class Browser:
         self.document = loadFromURL(self.URL, self)
         sleep(0.2)  # Add a small delay to ensure loading indicator is visible
         self.loading = False
+        self.scroll = 0
         self.document.call_document_action("start", {})
         self.document.call_document_action("redirect", {})
         # Reset focus state
@@ -67,7 +68,6 @@ class Browser:
                         "Can not open piko:// links. Only Piko can open these links."
                     )
                 )
-                self.document.browser.scroll = 0
             else:
                 # Handle relative paths by resolving them against the current URL
                 if not URL.startswith(("http://", "https://", "piko://")):
@@ -76,7 +76,6 @@ class Browser:
                 else:
                     self.URL = URL
                 self.loading = True
-                self.document.browser.scroll = 0
             return False
         else:
             return True
