@@ -106,7 +106,7 @@ class Document:
 
     def add_link(self, element: Element):
         key = element.getAttribute("key")
-        if key == None:
+        if key is None:
             return
         if key.isdigit() and (int(key) < 0 or int(key) > 9):
             return
@@ -134,25 +134,25 @@ class Document:
 
     def call_action(self, name: str, args: dict):
         action = self.find_action(name)
-        if action == None:
+        if action is None:
             return
         self.evaluator.names = {**args, **self.browser.get_global_variables()}
         self.evaluator.eval("(" + action.code + ")")
 
     def call_element_action(self, element: Element, name: str, args: dict):
         actionCall = element.getAttribute(name)
-        if actionCall == None:
+        if actionCall is None:
             return
         action = self.find_action(actionCall)
-        if action == None:
+        if action is None:
             return
         self.call_action(actionCall, args)
 
     def call_document_action(self, name: str, args: dict):
-        if name == None:
+        if name is None:
             return
         name = "[" + name + "]"
         action = self.find_action(name)
-        if action == None:
+        if action is None:
             return
         self.call_action(name, args)

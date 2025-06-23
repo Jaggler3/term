@@ -12,7 +12,7 @@ def get_pieces(styles: list, output_len: int):
         startPos = current.start
 
         endPos = output_len
-        if follow != None:
+        if follow is not None:
             endPos = follow.start
 
         col = curses.A_NORMAL

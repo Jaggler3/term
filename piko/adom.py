@@ -5,4 +5,4 @@ from the new adom package structure.
 """
 
 # Import everything from the new adom package to maintain backward compatibility
-from .adom import *
+from .adom import *  # noqa: F403

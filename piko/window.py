@@ -60,7 +60,7 @@ class Window:
                     self.buffer.copywin(
                         self.screen, y, x, y, x, y + h - 1, x + w - 1, False
                     )
-                except:
+                except Exception:
                     pass  # Skip if region is invalid
             self.dirty_regions = []
         self.screen.refresh()
@@ -92,7 +92,7 @@ class Window:
         try:
             self.buffer.move(y, x)
             self.mark_dirty_region(y, x, 1, self.WIDTH - x)
-        except:
+        except Exception:
             pass  # Skip if position is invalid
 
     def render(

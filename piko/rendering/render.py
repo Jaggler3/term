@@ -3,8 +3,8 @@ from typing import List
 
 from ..adom import Document, Element
 from ..adom.constants import COLORS_PAIRS_REVERSE
-from ..util import *
-from ..vector import *
+from ..util import expand_len, rcaplen, restrict_len
+from ..vector import Vec, cloneVec
 from .border_util import renderBorder, renderTableBorder
 from .element_util import getAlignOffset, getElementSize
 from .style import OutputStyle
@@ -25,12 +25,12 @@ def renderDocument(document: Document, width: int, height: int, scroll: int):
     # initialize frame with cleared screen
     background_index = (
         COLORS_PAIRS_REVERSE.get(document.background, COLORS_PAIRS_REVERSE["black"])
-        if document.background != None
+        if document.background is not None
         else None
     )
     foreground_index = (
         COLORS_PAIRS_REVERSE.get(document.foreground, COLORS_PAIRS_REVERSE["white"])
-        if document.foreground != None
+        if document.foreground is not None
         else None
     )
     res = clearScreen(width, height, background_index, foreground_index)
@@ -95,7 +95,7 @@ def renderDebugger(text: str, width: int, height: int) -> str:
     for line in textlines:
         out += restrict_len(expand_len(line, width), width)
 
-    for i in range(height - len(textlines)):
+    for _ in range(height - len(textlines)):
         out += " " * width
 
     return out
@@ -128,15 +128,14 @@ def renderElement(
 
     background = element.getAttribute("background")
     background_index = (
-        COLORS_PAIRS_REVERSE.get(background, None) if background != None else None
+        COLORS_PAIRS_REVERSE.get(background, None) if background is not None else None
     )
     foreground = element.getAttribute("foreground")
     foreground_index = (
-        COLORS_PAIRS_REVERSE.get(foreground, None) if foreground != None else None
+        COLORS_PAIRS_REVERSE.get(foreground, None) if foreground is not None else None
     )
 
     if element.type == "cont":
-        id = element.getAttribute("id")
         padding = getPadding(element, parentSize.x, parentSize.y)
         direction = getDirection(element)
         borderType = element.getAttribute("border")
@@ -149,7 +148,7 @@ def renderElement(
         innerSize = writeSize - paddingSize
 
         initialOffset = Vec(padding["left"], padding["top"])
-        if borderType != None:
+        if borderType is not None:
             initialOffset.x += 1
             initialOffset.y += 1
             innerSize.x -= 2
@@ -157,9 +156,9 @@ def renderElement(
 
         offset = cloneVec(initialOffset)
 
-        if background_index != None:
+        if background_index is not None:
             renderBackground(background_index, Vec(x, y), writeSize, res)
-        if foreground_index != None:
+        if foreground_index is not None:
             renderForeground(foreground_index, Vec(x, y), writeSize, res)
 
         # render children with clamp, calculated pc
@@ -181,7 +180,7 @@ def renderElement(
                 offset.y += singleSize.y
 
         # render border
-        if borderType != None:
+        if borderType is not None:
             renderBorder(borderType, Vec(x, y), writeSize, res)
 
     elif element.type == "text":
@@ -197,7 +196,7 @@ def renderElement(
             maxWidth = innerSize.x
             widthAttr = element.getAttribute("width")
             renderWidth = (
-                parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
+                parseSize(widthAttr, maxWidth) if widthAttr is not None else maxWidth
             )
 
             toRender = getRenderedFont(
@@ -209,7 +208,11 @@ def renderElement(
             wrapped_text_size = getWrapAndSize(
                 toRender,
                 renderWidth,
-                True if element.getAttribute("font") else preserve_whitespace,
+                (
+                    True
+                    if element.getAttribute("font") is not None
+                    else preserve_whitespace
+                ),
             )
             wrapped_text: str = wrapped_text_size["text"]
             wrapped_size: Vec = wrapped_text_size["size"]
@@ -230,7 +233,7 @@ def renderElement(
                 # in bounds
                 if renderY < len(res.rows) and renderY >= 0:
                     # styled text
-                    if textStyle != None and textStyle.startswith(TextStyles):
+                    if textStyle is not None and textStyle.startswith(TextStyles):
                         styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
                         styles.append(
                             OutputStyle(Vec(startPos + len(rowText), renderY), "normal")
@@ -243,9 +246,9 @@ def renderElement(
                     )
 
             # render background
-            if background_index != None:
+            if background_index is not None:
                 renderBackground(background_index, Vec(boxStartPos, y), writeSize, res)
-            if foreground_index != None:
+            if foreground_index is not None:
                 renderForeground(foreground_index, Vec(boxStartPos, y), writeSize, res)
         else:
             writeSize = Vec(0, 1)
@@ -253,11 +256,13 @@ def renderElement(
     elif element.type == "link":
         toRender = getLinkText(element)
 
-        outerSize = parentSize if parentSize != None else Vec(WIDTH, HEIGHT)
+        outerSize = parentSize
         alignOffset = getAlignOffset(element, toRender, outerSize)
         maxWidth = outerSize.x
         widthAttr = element.getAttribute("width")
-        renderWidth = parseSize(widthAttr, maxWidth) if widthAttr != None else maxWidth
+        renderWidth = (
+            parseSize(widthAttr, maxWidth) if widthAttr is not None else maxWidth
+        )
 
         wrapped = getWrapAndSize(toRender, renderWidth)
 
@@ -267,9 +272,9 @@ def renderElement(
         textStyle = element.getAttribute("style")
 
         # render background
-        if background_index != None:
+        if background_index is not None:
             renderBackground(background_index, Vec(x, y), writeSize, res)
-        if foreground_index != None:
+        if foreground_index is not None:
             renderForeground(foreground_index, Vec(x, y), writeSize, res)
 
         renderRows = wrapped["text"].splitlines()
@@ -280,7 +285,7 @@ def renderElement(
 
             if renderY < len(res.rows) and renderY >= 0:
                 endPos = startPos + rowTextLen
-                if textStyle != None and textStyle.startswith(TextStyles):
+                if textStyle is not None and textStyle.startswith(TextStyles):
                     styles.append(OutputStyle(Vec(startPos, renderY), textStyle))
                     styles.append(OutputStyle(Vec(endPos, renderY), "normal"))
                 res.rows[renderY] = (
@@ -339,7 +344,7 @@ def renderElement(
 
             # Render each line
             innerWidth = calcWidth - 2  # account for border
-            if icon != None:
+            if icon is not None:
                 innerWidth -= 3  # account for icon
 
             alignOffset = getAlignOffset(element, " " * innerWidth, parentSize)
@@ -388,7 +393,7 @@ def renderElement(
                 toRender = rcaplen(expand_len(line_text, innerWidth), innerWidth)
 
                 # Add icon to first line if it exists
-                if icon != None and line_idx == 0:
+                if icon is not None and line_idx == 0:
                     icon_char = ast.literal_eval(f"'{icon}'")
                     toRender = f" {icon_char} {toRender}"
 
@@ -417,7 +422,7 @@ def renderElement(
                 draw_cursor = val[:idx] + renderCursor + draw_cursor_end
 
             innerWidth = calcWidth - 2  # account for border
-            if icon != None:
+            if icon is not None:
                 innerWidth -= 3  # account for icon
 
             toRender = rcaplen(
@@ -433,7 +438,7 @@ def renderElement(
             )
 
             # add icon if it exists
-            if icon != None:
+            if icon is not None:
                 icon = ast.literal_eval(f"'{icon}'")
                 toRender = f" {icon} {toRender}"
 
@@ -463,13 +468,13 @@ def renderElement(
         # - tables have a default border type of "dotted thick"
 
         borderType = element.getAttribute("border")
-        borderType = "dotted thick" if borderType == None else borderType
+        borderType = "dotted thick" if borderType is None else borderType
 
         writeSize = getElementSize(element, parentSize)
 
-        if background_index != None:
+        if background_index is not None:
             renderBackground(background_index, Vec(x, y), writeSize, res)
-        if foreground_index != None:
+        if foreground_index is not None:
             renderForeground(foreground_index, Vec(x, y), writeSize, res)
 
         tableRows = [x for x in element.children if x.type == "row"]
@@ -509,7 +514,7 @@ def renderElement(
             offset.x = 1
             offset.y += rowHeights[i] + 1
 
-        if borderType != None:
+        if borderType is not None:
             renderTableBorder(borderType, Vec(x, y), columnWidths, rowHeights, res)
 
     elif element.type == "cell":
@@ -523,9 +528,9 @@ def renderElement(
         )
         innerSize = parentSize - paddingSize
 
-        if background_index != None:
+        if background_index is not None:
             renderBackground(background_index, Vec(x, y), writeSize, res)
-        if foreground_index != None:
+        if foreground_index is not None:
             renderForeground(foreground_index, Vec(x, y), writeSize, res)
 
         direction = getDirection(element)

@@ -39,7 +39,7 @@ def getElementSize(element: Element, parentSize: Vec) -> Vec:
         padding = getPadding(element, parentSize.x, parentSize.y)
         renderWidth = (
             parseSize(widthAttr, parentSize.x - padding["left"] - padding["right"])
-            if widthAttr != None
+            if widthAttr is not None
             else parentSize.x - padding["left"] - padding["right"]
         )
         preserve_whitespace = element.getAttribute("preserve") == "true"
@@ -54,7 +54,9 @@ def getElementSize(element: Element, parentSize: Vec) -> Vec:
     elif element.type == "link":
         widthAttr = element.getAttribute("width")
         renderWidth = (
-            parseSize(widthAttr, parentSize.x) if widthAttr != None else parentSize.x
+            parseSize(widthAttr, parentSize.x)
+            if widthAttr is not None
+            else parentSize.x
         )
         wrapped_text_size = getWrapAndSize(getLinkText(element), renderWidth)
         return wrapped_text_size["size"]
@@ -63,7 +65,9 @@ def getElementSize(element: Element, parentSize: Vec) -> Vec:
         lines_attr = element.getAttribute("lines")
         lines = int(lines_attr) if lines_attr else 1
         renderWidth = (
-            parseSize(widthAttr, parentSize.x) if widthAttr != None else parentSize.x
+            parseSize(widthAttr, parentSize.x)
+            if widthAttr is not None
+            else parentSize.x
         )
 
         if lines > 1:
@@ -100,7 +104,7 @@ def getElementSize(element: Element, parentSize: Vec) -> Vec:
         )
 
         # enforce box-sizing
-        if borderType != None:
+        if borderType is not None:
             res.add(-2 if hasDefWidth else 0, -2 if hasDefHeight else 0)
 
         return res

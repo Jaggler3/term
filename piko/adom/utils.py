@@ -27,7 +27,7 @@ def digestDeclaration(line: str) -> tuple:
             restype = etype
             break
 
-    if restype == None:
+    if restype is None:
         return None
     else:
         colIndex = line.find(":")

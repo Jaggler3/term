@@ -107,7 +107,7 @@ class Browser:
             parsed = urlparse(self.URL)
             params = parse_qs(parsed.query)
             return params.get(param, [None])[0]
-        except:
+        except Exception:
             return None
 
     def debug(self, text: str):
@@ -169,7 +169,7 @@ def loadFromURL(URL: str, browser: Browser):
         if URL.startswith(p):
             protocol = p
             break
-    if protocol == None:
+    if protocol is None:
         return piko.adom.Document(browser).with_message(
             f"Error: Could not determine URL protocol `{URL}`"
         )
