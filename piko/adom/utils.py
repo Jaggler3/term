@@ -1,8 +1,9 @@
 """Utility functions for the ADOM module."""
 
 from typing import List
-from .elements import Element
+
 from .constants import elementTypes
+from .elements import Element
 
 
 def get_all_elements(elementList: List[Element]):
@@ -25,13 +26,13 @@ def digestDeclaration(line: str) -> tuple:
         if line.startswith(etype):
             restype = etype
             break
-    
+
     if restype == None:
         return None
     else:
         colIndex = line.find(":")
         if colIndex != -1:
-            resvalue = line[colIndex + 1:]
+            resvalue = line[colIndex + 1 :]
         return (restype, resvalue)
 
 
@@ -39,13 +40,13 @@ def digestAttribute(line) -> dict:
     colIndex = line.find(":")
     if colIndex == -1:
         return None
-    
+
     attribName: str = line[:colIndex]
     if len(attribName) == 0:
         return None
     else:
-        attribValue: str = line[colIndex + 1:]
+        attribValue: str = line[colIndex + 1 :]
         if len(attribValue) == 0:
             return None
         else:
-            return { "name": attribName, "value": attribValue.strip() } 
+            return {"name": attribName, "value": attribValue.strip()}

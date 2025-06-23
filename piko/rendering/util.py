@@ -1,6 +1,8 @@
 from typing import Dict
-from ..vector import Vec
+
 from ..adom import Element
+from ..vector import Vec
+
 
 def parseSize(size, MAX) -> int:
     if isInt(size):
@@ -17,13 +19,9 @@ def parseSize(size, MAX) -> int:
         else:
             return -1
 
+
 def getPadding(element: Element, width: int, height: int) -> Dict[str, int]:
-    paddingOut = {
-        'top': 0,
-        'bottom': 0,
-        'left': 0,
-        'right': 0
-    }
+    paddingOut = {"top": 0, "bottom": 0, "left": 0, "right": 0}
 
     padding = element.getAttribute("padding")
     padding_top = element.getAttribute("padding-top")
@@ -34,26 +32,22 @@ def getPadding(element: Element, width: int, height: int) -> Dict[str, int]:
     if padding != None:
         vert = parseSize(padding, height)
         horiz = parseSize(padding, width)
-        paddingOut = {
-            'top': vert,
-            'bottom': vert,
-            'left': horiz,
-            'right': horiz
-        }
+        paddingOut = {"top": vert, "bottom": vert, "left": horiz, "right": horiz}
 
     if padding_top != None:
-        paddingOut['top'] += parseSize(padding_top, height)
+        paddingOut["top"] += parseSize(padding_top, height)
 
     if padding_bottom != None:
-        paddingOut['bottom'] += parseSize(padding_bottom, height)
+        paddingOut["bottom"] += parseSize(padding_bottom, height)
 
     if padding_left != None:
-        paddingOut['left'] += parseSize(padding_left, width)
+        paddingOut["left"] += parseSize(padding_left, width)
 
     if padding_right != None:
-        paddingOut['right'] += parseSize(padding_right, width)
+        paddingOut["right"] += parseSize(padding_right, width)
 
     return paddingOut
+
 
 def getDirection(element: Element) -> str:
     dir = element.getAttribute("direction")
@@ -61,6 +55,7 @@ def getDirection(element: Element) -> str:
         return "column"
     else:
         return dir
+
 
 def getDefinedSize(element: Element, parentSize: Vec) -> Vec:
     res = Vec(-1, -1)
@@ -74,9 +69,10 @@ def getDefinedSize(element: Element, parentSize: Vec) -> Vec:
         res.y = parseSize(defHeight, parentSize.y)
     return res
 
+
 def isInt(s):
     try:
         int(s)
         return True
     except ValueError:
-        return False 
+        return False

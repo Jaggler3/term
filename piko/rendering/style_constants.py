@@ -1,8 +1,5 @@
 # Text styling options
-TextStyles = (
-    "bold",
-    "underline"
-)
+TextStyles = ("bold", "underline")
 
 # Color mapping for terminal colors
 COLORS_PAIRS = {
@@ -16,4 +13,4 @@ COLORS_PAIRS = {
 }
 
 # Default width for input elements
-DEFAULT_INPUT_WIDTH = 15 
+DEFAULT_INPUT_WIDTH = 15

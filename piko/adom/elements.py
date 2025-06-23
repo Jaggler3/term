@@ -24,7 +24,7 @@ class Element:
         self.focused = False
         self.focus_cursor_index = 0
         self.parent: Element | None = None
-    
+
     def setAttribute(self, name, value):
         self.attributes.append(Attribute(name, value))
 

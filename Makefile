@@ -1,4 +1,4 @@
-.PHONY: install run dev clean
+.PHONY: install run dev clean format lint type-check check-all
 
 install:
 	pip install -r requirements.txt
@@ -13,4 +13,17 @@ dev:
 clean:
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -exec rm -r {} +
+
+# Formatting and linting commands
+format:
+	black .
+	isort .
+
+lint:
+	ruff check . --fix
+
+type-check:
+	mypy .
+
+check-all: format lint type-check
 

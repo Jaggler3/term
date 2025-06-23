@@ -6,15 +6,16 @@ if TYPE_CHECKING:
     from piko.browser import Browser
 
 from typing import List
+
 import simpleeval
 
-from .elements import Element, Action, createTextElement
-from .utils import get_all_elements
 from .constants import URL_BAR_INDEX
+from .elements import Action, Element, createTextElement
+from .utils import get_all_elements
 
 
 class Document:
-    def __init__(self, browser: 'Browser'):
+    def __init__(self, browser: "Browser"):
         self.browser = browser
         self.links: List[Element] = []
         self.elements: List[Element] = []
@@ -30,7 +31,7 @@ class Document:
         e.functions = simpleeval.DEFAULT_FUNCTIONS
         e.functions.update(self.browser.script_functions())
         return e
-    
+
     def with_message(self, message: str):
         self.elements = [createTextElement(message)]
         return self
@@ -80,7 +81,7 @@ class Document:
             self.focus = URL_BAR_INDEX
 
     def get_focused_element(self):
-        if self.focus > -1:	
+        if self.focus > -1:
             return self.get_focus_list()[self.focus]
         return None
 
@@ -98,7 +99,7 @@ class Document:
             if element.type.startswith(focusable):
                 focusList.append(element)
         return focusList
-    
+
     def _focus_on_url_bar(self):
         self.unfocus()
         self.focus = URL_BAR_INDEX
@@ -126,20 +127,16 @@ class Document:
         return None
 
     def submit(self, element: Element):
-        self.call_element_action(element, "submit", {
-            "value": element.value
-        })
-    
+        self.call_element_action(element, "submit", {"value": element.value})
+
     def change(self, element: Element):
-        self.call_element_action(element, "change", {
-            "value": element.value
-        })
+        self.call_element_action(element, "change", {"value": element.value})
 
     def call_action(self, name: str, args: dict):
         action = self.find_action(name)
         if action == None:
             return
-        self.evaluator.names = { **args, **self.browser.get_global_variables() }
+        self.evaluator.names = {**args, **self.browser.get_global_variables()}
         self.evaluator.eval("(" + action.code + ")")
 
     def call_element_action(self, element: Element, name: str, args: dict):

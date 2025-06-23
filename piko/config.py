@@ -27,7 +27,7 @@ COLORMAP = {
 }
 
 # Input settings
-VALID_INPUT_CHARS = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\|'\";:.>,</?`~"
+VALID_INPUT_CHARS = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%&*()-=_+[]{}\\|'\";:.>,</?`~"
 
 # Key mappings
 KEY_EXIT = ord("`")
@@ -41,4 +41,4 @@ KEY_RIGHT = 261
 KEY_BACKSPACE = 127
 KEY_ENTER = 10
 KEY_PASTE = 226  # Alt + V
-KEY_UNFOCUS = 197  # Alt + Q 
+KEY_UNFOCUS = 197  # Alt + Q

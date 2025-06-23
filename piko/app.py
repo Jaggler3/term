@@ -10,10 +10,11 @@ import traceback
 from typing import Optional
 
 from .browser import Browser
-from .window import Window
+from .config import ESCAPE_DELAY_MS, FPS
 from .input_handler import InputHandler
 from .renderer import Renderer
-from .config import FPS, ESCAPE_DELAY_MS
+from .window import Window
+
 
 class TerminalBrowser:
     def __init__(self, initial_url: Optional[str] = None):
@@ -30,7 +31,7 @@ class TerminalBrowser:
         self.browser = Browser(self.initial_url)
         self.input_handler = InputHandler(self.window, self.browser)
         self.renderer = Renderer(self.window, self.browser)
-        
+
         self._initialize_colors()
         curses.set_escdelay(ESCAPE_DELAY_MS)
         self.input_handler.start_input_thread()
@@ -39,6 +40,7 @@ class TerminalBrowser:
     def _initialize_colors(self) -> None:
         """Initialize color pairs for curses."""
         from .config import COLORMAP
+
         for background in range(1, 9):
             for foreground in range(1, 9):
                 key = background * 10 + foreground
@@ -54,19 +56,19 @@ class TerminalBrowser:
                     continue
 
                 self._update()
-                
+
                 # Always render if force_render is True, otherwise normal render check
                 if self.force_render:
                     self.renderer.render(force=True)
                     self.force_render = False
                 else:
                     self.renderer.render()
-                
+
                 if self.browser.loading:
                     self.browser.start_load()
-                
+
                 self.window.refresh()
-                time.sleep(1/FPS)
+                time.sleep(1 / FPS)
             except KeyboardInterrupt:
                 curses.endwin()
                 sys.exit(0)
@@ -79,6 +81,7 @@ class TerminalBrowser:
         if self.window.exiting:
             sys.exit(0)
 
+
 def parse_args() -> Optional[str]:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser()
@@ -86,11 +89,13 @@ def parse_args() -> Optional[str]:
     args = parser.parse_args()
     return args.url
 
+
 def main() -> None:
     """Application entry point."""
     initial_url = parse_args()
     browser = TerminalBrowser(initial_url)
     curses.wrapper(browser.setup)
 
+
 if __name__ == "__main__":
-    main() 
+    main()
