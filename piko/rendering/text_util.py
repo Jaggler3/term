@@ -43,18 +43,22 @@ def getWrapAndSize(text: str, maxWidth: int, preserve_whitespace: bool = False):
         }
     else:
         # Use normal text wrapping
+        
         wrapper = text_wrapper
         wrapper.width = maxWidth
         wrappedText = wrapper.fill(text)
 
-        longest_line = max(len(line) for line in wrappedText.splitlines())
+        lines = wrappedText.splitlines()
+        longest_line = max(len(line) for line in lines) if len(lines) > 0 else 0
 
         return {
             "text": wrappedText,
-            "size": Vec(longest_line, len(wrappedText.splitlines()))
+            "size": Vec(longest_line, len(lines))
         }
 
-def getRenderedFont(value: str, preserve_whitespace: bool, font: str) -> str:
+def getRenderedFont(value: str | None, preserve_whitespace: bool, font: str) -> str:
+    if not value:
+        return ""
     if not preserve_whitespace:
         value = value.strip()
     if font:
