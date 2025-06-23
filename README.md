@@ -1,8 +1,15 @@
-# Piko Browser - Complete Documentation
+
+<p align="center"><img width="254" alt="image" src="https://github.com/user-attachments/assets/96605983-6241-4a87-865f-aa8eb044eae8" />
+</p>
+
+<h2 align="center">Piko</h2>
 
 ## Overview
 
-Piko is a terminal-based interactive internet browser that works with lightweight XML file formats. It provides a simple, text-based interface for browsing content and interacting with web applications.
+<img width="1182" alt="image" src="https://github.com/user-attachments/assets/f0431bb5-7705-40d2-b934-3f069799bde4" />
+
+
+Piko is a terminal-based interactive internet browser that works with a lightweight XML file format. It provides a simple, text-based interface for browsing content and interacting with web applications.
 
 ## File Format
 
