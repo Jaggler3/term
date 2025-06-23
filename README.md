@@ -109,7 +109,7 @@ Actions provide interactivity through JavaScript-like code:
 
 Install using this command:
 ```bash
-pip3 install piko
+pip3 install pikobrowser
 ```
 
 ### Starting the Browser
@@ -121,7 +121,7 @@ piko
 
 Or manually:
 ```bash
-python3 -m piko
+python3 -m pikobrowser
 ```
 
 ### Navigation
