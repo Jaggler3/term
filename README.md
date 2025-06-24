@@ -8,8 +8,32 @@
 
 <img width="1182" alt="image" src="https://github.com/user-attachments/assets/f0431bb5-7705-40d2-b934-3f069799bde4" />
 
-
 Piko is a terminal-based interactive internet browser that works with a lightweight XML file format. It provides a simple, text-based interface for browsing content and interacting with web applications.
+
+## Using the Browser
+
+### Installation
+
+Install using this command:
+```bash
+pip3 install pikobrowser
+```
+Uninstall with:
+```bash
+pip3 uninstall pikobrowser
+```
+
+### Starting the Browser
+
+Start using this command:
+```bash
+piko
+```
+
+Or manually:
+```bash
+python3 -m pikobrowser
+```
 
 ## File Format
 
@@ -102,27 +126,6 @@ Actions provide interactivity through JavaScript-like code:
 - `debug(text)` - Debug output
 - `geturlparam(param)` - Extract URL parameter from current URL
 - `setvalue(id, text)` - Set the value of an input element by ID
-
-## Using the Browser
-
-### Installation
-
-Install using this command:
-```bash
-pip3 install pikobrowser
-```
-
-### Starting the Browser
-
-Start using this command:
-```bash
-piko
-```
-
-Or manually:
-```bash
-python3 -m pikobrowser
-```
 
 ### Navigation
 
