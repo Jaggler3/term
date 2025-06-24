@@ -143,7 +143,7 @@ class InputHandler:
             )
         elif char == chr(258):  # down arrow
             if lines > 1:
-                # Move cursor down one line
+                # Move cursor down one line for multiline inputs
                 val_lines = (
                     focused_element.value.split("\n") if focused_element.value else [""]
                 )
@@ -172,9 +172,15 @@ class InputHandler:
                         new_pos += len(val_lines[i]) + 1
                     new_pos += new_col
                     focused_element.focus_cursor_index = new_pos
+            else:
+                # Scroll down for single-line inputs
+                self.browser.scroll = min(
+                    self.browser.document_size.y - self.window.HEIGHT,
+                    self.browser.scroll + 1,
+                )
         elif char == chr(259):  # up arrow
             if lines > 1:
-                # Move cursor up one line
+                # Move cursor up one line for multiline inputs
                 val_lines = (
                     focused_element.value.split("\n") if focused_element.value else [""]
                 )
@@ -203,6 +209,9 @@ class InputHandler:
                         new_pos += len(val_lines[i]) + 1
                     new_pos += new_col
                     focused_element.focus_cursor_index = new_pos
+            else:
+                # Scroll up for single-line inputs
+                self.browser.scroll = max(0, self.browser.scroll - 1)
         elif char == chr(10):  # Enter key
             if lines > 1:
                 # Insert newline at cursor position for multi-line inputs
