@@ -17,19 +17,19 @@ def getBorderCodes(type: str) -> dict:
     }
 
     if type == "thin":
-        codes["top-left"] = "\u250c"
-        codes["top-right"] = "\u2510"
-        codes["bottom-left"] = "\u2514"
-        codes["bottom-right"] = "\u2518"
-        codes["top"] = "\u2500"
-        codes["bottom"] = "\u2500"
-        codes["left"] = "\u2502"
-        codes["right"] = "\u2502"
-        codes["top-intersect"] = "\u252c"
-        codes["bottom-intersect"] = "\u2534"
-        codes["left-intersect"] = "\u251c"
-        codes["right-intersect"] = "\u2524"
-        codes["middle-intersect"] = "\u253c"
+        codes["top-left"] = "┌"
+        codes["top-right"] = "┐"
+        codes["bottom-left"] = "└"
+        codes["bottom-right"] = "┘"
+        codes["top"] = "─"
+        codes["bottom"] = "─"
+        codes["left"] = "│"
+        codes["right"] = "│"
+        codes["top-intersect"] = "┬"
+        codes["bottom-intersect"] = "┴"
+        codes["left-intersect"] = "├"
+        codes["right-intersect"] = "┤"
+        codes["middle-intersect"] = "┼"
 
     if type == "dotted thick":
         codes["top-left"] = "\u250f"

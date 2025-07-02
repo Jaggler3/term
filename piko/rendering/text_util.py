@@ -66,4 +66,4 @@ def getRenderedFont(value: Union[str, None], preserve_whitespace: bool, font: st
 
 
 def getLinkText(element):
-    return "[" + element.getAttribute("key") + "] " + element.value
+    return "[" + element.getAttribute("key") + "] " + (element.value or "")

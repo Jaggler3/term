@@ -184,7 +184,8 @@ def renderElement(
             renderBorder(borderType, Vec(x, y), writeSize, res)
 
     elif element.type == "text":
-        if element.value != "":
+        val = element.value or ""
+        if len(val) > 0:
             preserve_whitespace = element.getAttribute("preserve") == "true"
 
             padding = getPadding(element, parentSize.x, parentSize.y)
@@ -301,7 +302,7 @@ def renderElement(
         calculatedSize = getElementSize(element, parentSize)
         calcWidth = calculatedSize.x
         renderCursor = "\N{FULL BLOCK}" if element.focused else ""
-        val = element.value
+        val = element.value or ""
         idx = element.focus_cursor_index
 
         # Handle multi-line input
@@ -348,7 +349,7 @@ def renderElement(
                 innerWidth -= 3  # account for icon
 
             alignOffset = getAlignOffset(element, " " * innerWidth, parentSize)
-            borderType = "dotted thick" if element.focused else "dotted thin"
+            borderType = "thin"
 
             writeSize = Vec(innerWidth, lines)
 
@@ -446,7 +447,7 @@ def renderElement(
 
             alignOffset = getAlignOffset(element, toRender, parentSize)
 
-            borderType = "dotted thick" if element.focused else "dotted thin"
+            borderType = "thin"
             renderBorder(borderType, Vec(x, y), Vec(toRenderLength, 1), res)
             writeSize = Vec(toRenderLength + 2, 3)
             startPos = x + alignOffset + 1
